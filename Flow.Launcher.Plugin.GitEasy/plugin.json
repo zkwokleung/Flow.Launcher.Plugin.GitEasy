@@ -1,0 +1,12 @@
+{
+    "ID": "5092D843A34947E0967D85F568C86816",
+    "ActionKeyword": "ge",
+    "Name": "GitEasy",
+    "Description": "A plugin for easily searching and cloning repositories easily.",
+    "Author": "zkwokleung",
+    "Version": "1.0.0",
+    "Language": "csharp",
+    "Website": "https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy",
+    "IcoPath": "icon.png",
+    "ExecuteFileName": "Flow.Launcher.Plugin.GitEasy.dll"
+}
