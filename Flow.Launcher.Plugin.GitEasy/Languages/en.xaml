@@ -3,12 +3,19 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
-    <system:String x:Key="flowlauncher_plugin_giteasy_plugin_title">Git Easy</system:String>
-    <system:String x:Key="flowlauncher_plugin_giteasy_plugin_description">Easily search for repositories on GitHub or clone any repositories.</system:String>
+    <system:String x:Key="giteasy_plugin_title">Git Easy</system:String>
+    <system:String x:Key="giteasy_plugin_description">Easily search for repositories on GitHub or clone any repositories.</system:String>
+
+    <!--  Query result  -->
+    <system:String x:Key="giteasy_query_result_clone">Clone</system:String>
+    <system:String x:Key="giteasy_query_result_clone_msg">Clone {0} to {1}</system:String>
+    <system:String x:Key="giteasy_query_result_clone_no_repos">No valid repository found.</system:String>
 
     <!--  Program setting  -->
-    <system:String x:Key="flowlauncher_plugin_giteasy_settings_repositories_path">Repositories Path</system:String>
-    <system:String x:Key="flowlauncher_plugin_giteasy_settings_repositories_path_textbox_placeholder">...</system:String>
-    <system:String x:Key="flowlauncher_plugin_giteasy_settings_browse">Browse</system:String>
+    <system:String x:Key="giteasy_settings_repositories_path">Repositories Path</system:String>
+    <system:String x:Key="giteasy_settings_repositories_path_description">The default clone destination folder.</system:String>
+    <system:String x:Key="giteasy_settings_git_path">Git Path</system:String>
+    <system:String x:Key="giteasy_settings_git_path_description">The folder containing the git executable.</system:String>
+    <system:String x:Key="giteasy_settings_browse">Browse</system:String>
 
 </ResourceDictionary>

@@ -19,6 +19,16 @@ namespace Flow.Launcher.Plugin.GitEasy.ViewModels
             }
         }
 
+        public string GitPath
+        {
+            get=> m_settings.GitPath;
+            set
+            {
+                m_settings.GitPath = value;
+                OnPropertyChanged();
+            }
+        }
+
         public SettingsPanelViewModel(Settings settings)
         {
             this.m_settings = settings;

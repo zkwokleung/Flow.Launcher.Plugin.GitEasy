@@ -23,7 +23,18 @@ namespace Flow.Launcher.Plugin.GitEasy.Views
             DataContext = new SettingsPanelViewModel(m_settings);
         }
 
-        private void OnBtnBrowseClick(object sender, RoutedEventArgs e)
+        private void OnBtnBrowseReposPathClick(object sender, RoutedEventArgs e)
+        {
+            using FolderBrowserDialog fbd = new();
+            DialogResult result = fbd.ShowDialog();
+
+            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+            {
+                m_settingsPanelViewModel.ReposPath = fbd.SelectedPath;
+            }
+        }
+
+        private void OnBtnBrowseGitPathClick(object sender, RoutedEventArgs e)
         {
             using FolderBrowserDialog fbd = new();
             DialogResult result = fbd.ShowDialog();
