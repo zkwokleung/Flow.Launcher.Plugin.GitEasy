@@ -11,46 +11,16 @@
                HorizontalAlignment="Stretch">
         <Grid Margin="0">
             <Grid.RowDefinitions>
-                <RowDefinition>
-                </RowDefinition>
-                <RowDefinition>
-                </RowDefinition>
+                <RowDefinition MinHeight="45" />
+                <RowDefinition MinHeight="45" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.5*" />
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            <Label x:Name="lblGitPath"
-                   Grid.Row="0"
-                   Grid.Column="0"
-                   Content="{DynamicResource giteasy_settings_git_path}"
-                   Margin="0,0,10,0"
-                   VerticalAlignment="Center"
-                   FontSize="16"
-                   MinWidth="120"
-                   Height="25" />
-            <TextBox x:Name="tbGitPath"
-                     Grid.Row="0"
-                     Grid.Column="1"
-                     Margin="10,14,10,14"
-                     TextWrapping="Wrap"
-                     Text="{Binding GitPath}"
-                     VerticalAlignment="Center"
-                     FontSize="16"
-                     MinWidth="120"
-                     Height="25" />
-            <Button x:Name="btnBrowseGit"
-                    Grid.Row="0"
-                    Grid.Column="2"
-                    Content="{DynamicResource giteasy_settings_browse}"
-                    Margin="10,0,0,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    MinWidth="60"
-                    Click="OnBtnBrowseGitPathClick" />
             <Label x:Name="lblReposPath"
-                   Grid.Row="1"
+                   Grid.Row="0"
                    Grid.Column="0"
                    Content="{DynamicResource giteasy_settings_repositories_path}"
                    Margin="0,0,10,0"
@@ -59,7 +29,7 @@
                    MinWidth="120"
                    Height="25" />
             <TextBox x:Name="tbReposPath"
-                     Grid.Row="1"
+                     Grid.Row="0"
                      Grid.Column="1"
                      Margin="10,14,10,14"
                      TextWrapping="Wrap"
@@ -70,14 +40,30 @@
                      MinWidth="120"
                      Height="25" />
             <Button x:Name="btnBrowse"
-                    Grid.Row="1"
+                    Grid.Row="0"
                     Grid.Column="2"
-                    Content="{DynamicResource giteasy_settings_browse}"
+                    Content="..."
                     Margin="10,0,0,0"
                     VerticalAlignment="Center"
                     FontSize="16"
                     MinWidth="60"
                     Click="OnBtnBrowseReposPathClick" />
+            <Label x:Name="lblOpenClonedReposIn"
+                   Grid.Row="1"
+                   Grid.Column="0"
+                   VerticalAlignment="Center"
+                   FontSize="16"
+                   MinWidth="120"
+                   Content="{DynamicResource giteasy_settings_open_repos_in}"
+                   Height="25"
+                   Margin="0,0,10,0" />
+            <ComboBox x:Name="cbOpenReposIn"
+                      Grid.Row="1"
+                      Grid.Column="1"
+                      Width="120"
+                      SelectedIndex="{Binding SelectedOpenReposInIndex}"
+                      Margin="10,0,10,0"
+                      VerticalAlignment="Center" />
         </Grid>
     </DockPanel>
 </UserControl>

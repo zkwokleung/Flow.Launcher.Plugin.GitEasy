@@ -11,11 +11,16 @@
     <system:String x:Key="giteasy_query_result_clone_msg">Clone {0} to {1}</system:String>
     <system:String x:Key="giteasy_query_result_clone_no_repos">No valid repository found.</system:String>
 
+    <!--  Message  -->
+    <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
+    <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>
+
     <!--  Program setting  -->
     <system:String x:Key="giteasy_settings_repositories_path">Repositories Path</system:String>
     <system:String x:Key="giteasy_settings_repositories_path_description">The default clone destination folder.</system:String>
     <system:String x:Key="giteasy_settings_git_path">Git Path</system:String>
     <system:String x:Key="giteasy_settings_git_path_description">The folder containing the git executable.</system:String>
     <system:String x:Key="giteasy_settings_browse">Browse</system:String>
+    <system:String x:Key="giteasy_settings_open_repos_in">Open Repository In</system:String>
 
 </ResourceDictionary>

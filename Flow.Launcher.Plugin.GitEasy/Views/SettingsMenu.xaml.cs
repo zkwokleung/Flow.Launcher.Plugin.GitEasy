@@ -1,4 +1,6 @@
 ﻿using Flow.Launcher.Plugin.GitEasy.ViewModels;
+using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Forms;
 using UserControl = System.Windows.Controls.UserControl;
@@ -21,6 +23,8 @@ namespace Flow.Launcher.Plugin.GitEasy.Views
             m_settings = settings;
 
             DataContext = new SettingsPanelViewModel(m_settings);
+
+            cbOpenReposIn.ItemsSource = Enum.GetValues(typeof(OpenOption)).Cast<OpenOption>();
         }
 
         private void OnBtnBrowseReposPathClick(object sender, RoutedEventArgs e)

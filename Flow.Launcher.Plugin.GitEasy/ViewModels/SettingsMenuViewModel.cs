@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Linq;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Flow.Launcher.Plugin.GitEasy.ViewModels
@@ -21,10 +23,22 @@ namespace Flow.Launcher.Plugin.GitEasy.ViewModels
 
         public string GitPath
         {
-            get=> m_settings.GitPath;
+            get => m_settings.GitPath;
             set
             {
                 m_settings.GitPath = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string[] OpenReposInOptions = Enum.GetValues(typeof(OpenOption)).Cast<OpenOption>().Select(v => v.ToString()).ToArray();
+
+        public int SelectedOpenReposInIndex
+        {
+            get => (int)m_settings.OpenReposIn;
+            set
+            {
+                m_settings.OpenReposIn = (OpenOption)value;
                 OnPropertyChanged();
             }
         }

@@ -10,6 +10,6 @@ namespace Flow.Launcher.Plugin.GitEasy.Commands
     {
         public string Options { get; set; }
         public string Repo { get; set; }
-        public string Dir { get; set; }
+        public string DestinationFolder { get; set; }
     }
 }

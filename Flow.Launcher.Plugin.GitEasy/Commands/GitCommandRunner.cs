@@ -20,7 +20,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Commands
             m_settings = settings;
         }
 
-        public void CloneRepos(GitCloneCommandOptions options)
+        public void CloneRepos(GitCloneCommandOptions options, Action OnCompleted = null)
         {
             if (string.IsNullOrWhiteSpace(options.Repo))
             {
@@ -32,19 +32,29 @@ namespace Flow.Launcher.Plugin.GitEasy.Commands
                 throw new Exception("git.exe not found");
             }
 
-            ShellCommand.Execute(Process.Start, PrepareGitCloneProcessStartInfo(options));
+            Process.Start(PrepareGitCloneProcessStartInfo(options)).WaitForExit();
+
+            OnCompleted?.Invoke();
         }
 
         private ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options)
         {
-            return new()
+            ProcessStartInfo info = new()
             {
-                Verb = "",
-                WorkingDirectory = m_settings.GitPath,
-                FileName = GIT_EXE,
-                Arguments = $"clone {options.Options} {options.Repo} {options.Dir}",
-                UseShellExecute = true
+                FileName = "git.exe",
+                WorkingDirectory = options.DestinationFolder
             };
+
+            info.ArgumentList.Add("clone");
+
+            if(string.IsNullOrWhiteSpace(options.Options))
+            {
+                info.ArgumentList.Add(options.Options);
+            }
+
+            info.ArgumentList.Add(options.Repo);
+
+            return info;
         }
 
         private static string GetGitExecutable(string path)

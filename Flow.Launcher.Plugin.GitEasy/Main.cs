@@ -1,4 +1,5 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Views;
+﻿using Flow.Launcher.Plugin.GitEasy.Commands;
+using Flow.Launcher.Plugin.GitEasy.Views;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ namespace Flow.Launcher.Plugin.GitEasy
     {
         private static PluginInitContext s_context { get; set; }
         private static Settings s_settings { get; set; }
+        private static GitCommandRunner s_gitCommandRunner { get; set; }
 
         static Main()
         {
@@ -25,6 +27,8 @@ namespace Flow.Launcher.Plugin.GitEasy
             s_context = context;
 
             s_settings = s_context.API.LoadSettingJsonStorage<Settings>();
+
+            s_gitCommandRunner = new GitCommandRunner(s_settings);
         }
 
         public void Save()
@@ -80,8 +84,9 @@ namespace Flow.Launcher.Plugin.GitEasy
                 return new()
                 {
                     new Result{
-                    Title= s_context.API.GetTranslation("giteasy_query_result_clone_no_repos"),
-                    IcoPath = "Images\\icon.png",
+                        Title= s_context.API.GetTranslation("giteasy_query_result_clone_no_repos"),
+                        IcoPath = "Images\\icon.png",
+                        Action = a => { return true; }
                     }
                 };
             }
@@ -89,14 +94,64 @@ namespace Flow.Launcher.Plugin.GitEasy
             string firstRepos = repos.First();
             string options = string.Join(" ", terms.Remove(firstRepos));
 
+            // Extract the repos folder name from the repos url
+            string location = ExtractRepoName(firstRepos);
+
             return new()
             {
                 new Result{
-                    Title= $"{s_context.API.GetTranslation("giteasy_query_result_clone")} {firstRepos}",
+                    Title= $"{s_context.API.GetTranslation("giteasy_query_result_clone")} {location}",
                     SubTitle =  string.Format(s_context.API.GetTranslation("giteasy_query_result_clone_msg"), firstRepos, s_settings.ReposPath),
                     IcoPath = "Images\\icon.png",
+                    Action = a =>
+                    {
+                        try
+                        {
+                            s_gitCommandRunner.CloneRepos(new()
+                            {
+                                Options = options,
+                                DestinationFolder = s_settings.ReposPath,
+                                Repo = firstRepos
+                            }, () =>
+                            {
+                                s_context.API.ShowMsg(
+                                    s_context.API.GetTranslation("giteasy_query_clone_complete"),
+                                    $"{s_context.API.GetTranslation("giteasy_query_clone_complete_msg")} {location}"
+                                );
+
+                                switch(s_settings.OpenReposIn)
+                                {
+                                    case OpenOption.FileExplorer:
+                                        SystemCommand.OpenExplorer($"{s_settings.ReposPath}\\{location}");
+                                        break;
+
+                                    case OpenOption.VSCode:
+                                        SystemCommand.OpenVsCode($"{s_settings.ReposPath}\\{location}");
+                                        break;
+
+                                    default:
+                                        break;
+                                }
+                            });
+                        }catch (Exception ex)
+                        {
+                            s_context.API.ShowMsgError("Error", ex.Message);
+                        }
+
+                        // TODO: Open explorer/vscode after execution
+                        return true;
+                    }
                 }
             };
+        }
+        #endregion
+
+        #region Private Functions
+        private string ExtractRepoName(string url)
+        {
+            // Look for the last index of the last slash /
+            int start = url.LastIndexOf('/') + 1;
+            return url.Substring(start, url.Length - start - 4);
         }
         #endregion
 
