@@ -1,10 +1,10 @@
 {
   "ID": "AA9EA7B6AB4A4822858BC38FF6344248",
   "ActionKeyword": "git",
-  "Name": "Git Quick",
+  "Name": "Git Easy",
   "Description": "Easily search for repositories on GitHub or clone any repositories.",
   "Author": "zkwokleung",
-  "Version": "1.0.0",
+  "Version": "0.1.0",
   "Language": "csharp",
   "Website": "https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy",
   "IcoPath": "Images/icon.png",
