@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flow.Launcher.Plugin.GitEasy.Commands
+namespace Flow.Launcher.Plugin.GitEasy.Models.Commands.Options
 {
     public class GitCloneCommandOptions
     {

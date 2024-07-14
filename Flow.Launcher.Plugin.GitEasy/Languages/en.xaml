@@ -8,12 +8,16 @@
 
     <!--  Query result  -->
     <system:String x:Key="giteasy_query_result_clone">Clone</system:String>
+    <system:String x:Key="giteasy_query_result_clone_desc">Clone a repository with HTTPS or SSH.</system:String>
     <system:String x:Key="giteasy_query_result_clone_msg">Clone {0} to {1}</system:String>
     <system:String x:Key="giteasy_query_result_clone_no_repos">No valid repository found.</system:String>
 
     <!--  Message  -->
     <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
     <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>
+    
+    <system:String x:Key="giteasy_query_invalid_cmd">Invalid Command</system:String>
+    <system:String x:Key="giteasy_query_invalid_cmd_msg">Please double check your command.</system:String>
 
     <!--  Program setting  -->
     <system:String x:Key="giteasy_settings_repositories_path">Repositories Path</system:String>

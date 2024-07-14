@@ -2,6 +2,7 @@
 using System.Linq;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Flow.Launcher.Plugin.GitEasy.Models;
 
 namespace Flow.Launcher.Plugin.GitEasy.ViewModels
 {

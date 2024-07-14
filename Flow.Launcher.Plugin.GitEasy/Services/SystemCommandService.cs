@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,12 +7,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flow.Launcher.Plugin.GitEasy.Commands
+namespace Flow.Launcher.Plugin.GitEasy.Services
 {
-    public class SystemCommand
+    public class SystemCommandService : ISystemCommandService
     {
-
-        public static void OpenExplorer(string path = "", Action OnCompleted = null)
+        public void OpenExplorer(string path = "", Action OnCompleted = null)
         {
             ProcessStartInfo info = new()
             {
@@ -24,7 +24,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Commands
             OnCompleted?.Invoke();
         }
 
-        public static void OpenVsCode(string path = "", Action OnCompleted = null)
+        public void OpenVsCode(string path = "", Action OnCompleted = null)
         {
             ProcessStartInfo info = new()
             {

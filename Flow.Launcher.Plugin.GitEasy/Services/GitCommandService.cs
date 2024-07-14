@@ -1,23 +1,21 @@
-﻿using Flow.Launcher.Plugin.SharedCommands;
+﻿using Flow.Launcher.Plugin.GitEasy.Models;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Flow.Launcher.Plugin.GitEasy.Commands
+namespace Flow.Launcher.Plugin.GitEasy.Services
 {
-    public class GitCommandRunner
+    public class GitCommandService : IGitCommandService
     {
         private const string GIT_EXE = "git.exe";
 
-        private Settings m_settings;
+        private ISettingsService m_settingService;
 
-        public GitCommandRunner(Settings settings)
+        public GitCommandService(ISettingsService settingsService)
         {
-            m_settings = settings;
+            m_settingService = settingsService;
         }
 
         public void CloneRepos(GitCloneCommandOptions options, Action OnCompleted = null)
@@ -27,7 +25,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Commands
                 throw new ArgumentException("Repo can not be null or empty");
             }
 
-            if (!File.Exists(GetGitExecutable(m_settings.GitPath)))
+            if (!File.Exists(GetGitExecutable(m_settingService.GetSettingsOrDefault().GitPath)))
             {
                 throw new Exception("git.exe not found");
             }
@@ -47,7 +45,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Commands
 
             info.ArgumentList.Add("clone");
 
-            if(string.IsNullOrWhiteSpace(options.Options))
+            if (string.IsNullOrWhiteSpace(options.Options))
             {
                 info.ArgumentList.Add(options.Options);
             }

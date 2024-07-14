@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Flow.Launcher.Plugin.GitEasy
+namespace Flow.Launcher.Plugin.GitEasy.Models
 {
     public enum OpenOption
     {

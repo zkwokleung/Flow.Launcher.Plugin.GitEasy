@@ -1,4 +1,5 @@
-﻿using Octokit;
+﻿using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,26 +8,26 @@ using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services
 {
-    public static class GitHubService
+    public class GitHubService : IGitHubService
     {
-        private static GitHubClient _client;
+        private GitHubClient _client;
 
-        public static void Init()
+        public void Init()
         {
             _client = new GitHubClient(new ProductHeaderValue("Flow.Launcher.Plugin.GitEasy"));
         }
 
-        public static async Task<User> GetUser(string username)
+        public async Task<User> GetUser(string username)
         {
             return await _client.User.Get(username);
         }
 
-        public static async Task<Repository> GetRepos(long reposId)
+        public async Task<Repository> GetRepo(long reposId)
         {
             return await _client.Repository.Get(reposId);
         }
 
-        public static async Task<Repository> GetRepos(string username, string reposName)
+        public async Task<Repository> GetRepo(string username, string reposName)
         {
             return await _client.Repository.Get(username, reposName);
         }
