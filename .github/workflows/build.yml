@@ -39,7 +39,7 @@ jobs:
         run: |
           cd Flow.Launcher.Plugin.GitEasy
           dotnet publish -c Release -r win-x64 --no-self-contained Flow.Launcher.Plugin.GitEasy.csproj
-          7z a -tzip "Flow.Launcher.Plugin.GitEasy.zip" "./bin/Release/win-x64/publish/*"
+          7z a -tzip "Flow.Launcher.Plugin.GitEasy.zip" "./bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish/*"
 
       - name: Publish
         uses: softprops/action-gh-release@v1
