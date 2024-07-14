@@ -1,8 +1,8 @@
 {
   "ID": "AA9EA7B6AB4A4822858BC38FF6344248",
-  "ActionKeyword": "git",
+  "ActionKeyword": "ge",
   "Name": "Git Easy",
-  "Description": "Easily search for repositories on GitHub or clone any repositories.",
+  "Description": "Provide easy access to repositories. Allows quickly cloning repository and open in vscode/file explorer.",
   "Author": "zkwokleung",
   "Version": "0.1.0",
   "Language": "csharp",
