@@ -35,7 +35,16 @@ public class CloneCommand : ICommand
     {
         if (string.IsNullOrWhiteSpace(query))
         {
-            return new();
+            // Display a hint result
+            return new()
+            {
+                new Result
+                {
+                    Title = m_context.API.GetTranslation(Translations.QueryResultCloneHint),
+                    IcoPath = Icons.Logo,
+                    Action = _ => true,
+                }
+            };
         }
 
         List<string> terms = query.Split(' ').ToList();
@@ -50,7 +59,7 @@ public class CloneCommand : ICommand
                 new Result{
                     Title= m_context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
                     IcoPath = Icons.Logo,
-                    Action = a => { return true; }
+                    Action = _ => true,
                 }
             };
         }
@@ -63,11 +72,12 @@ public class CloneCommand : ICommand
 
         return new()
         {
-            new Result{
+            // Default option
+            new Result {
                 Title= $"{m_context.API.GetTranslation(Translations.QueryResultClone)} {location}",
                 SubTitle =  string.Format(m_context.API.GetTranslation(Translations.QueryResultCloneMsg), firstRepos, m_settingsService.GetSettingsOrDefault().ReposPath),
                 IcoPath = Icons.Logo,
-                Action = a =>
+                Action = _ =>
                 {
                     try
                     {
@@ -78,12 +88,8 @@ public class CloneCommand : ICommand
                             Repo = firstRepos
                         }, () =>
                         {
-                            m_context.API.ShowMsg(
-                                m_context.API.GetTranslation(Translations.QueryCloneComplete),
-                                $"{m_context.API.GetTranslation(Translations.QueryClonseCompleteMsg)} {location}"
-                            );
+                            ShowCloneCompleteMsg(location);
                             
-
                             // Open explorer/vscode after execution
                             switch(m_settingsService.GetSettingsOrDefault().OpenReposIn)
                             {
@@ -105,11 +111,73 @@ public class CloneCommand : ICommand
                     }
                     return true;
                 }
+            },
+
+            // Clone and open in Explorer
+            new Result
+            {
+                Title= m_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer),
+                IcoPath = Icons.Explorer,
+                Action = _ =>
+                {
+                    try
+                    {
+                        m_gitCommandService.CloneRepos(new()
+                        {
+                            Options = options,
+                            DestinationFolder = m_settingsService.GetSettingsOrDefault().ReposPath,
+                            Repo = firstRepos
+                        }, () =>
+                        {
+                            ShowCloneCompleteMsg(location);
+                            m_systemCommandService.OpenExplorer($"{m_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
+                        });
+                    }catch (Exception ex)
+                    {
+                        m_context.API.ShowMsgError("Error", ex.Message);
+                    }
+                    return true;
+                }
+            },
+
+            // Clone and open in VS Code
+            new Result
+            {
+                Title= m_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode),
+                IcoPath = Icons.VSCode,
+                Action = _ =>
+                {
+                    try
+                    {
+                        m_gitCommandService.CloneRepos(new()
+                        {
+                            Options = options,
+                            DestinationFolder = m_settingsService.GetSettingsOrDefault().ReposPath,
+                            Repo = firstRepos
+                        }, () =>
+                        {
+                            ShowCloneCompleteMsg(location);
+                            m_systemCommandService.OpenVsCode($"{m_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
+                        });
+                    }catch (Exception ex)
+                    {
+                        m_context.API.ShowMsgError("Error", ex.Message);
+                    }
+                    return true;
+                }
             }
         };
     }
 
     #region Private Functions
+    private void ShowCloneCompleteMsg(string location)
+    {
+        m_context.API.ShowMsg(
+            m_context.API.GetTranslation(Translations.QueryCloneComplete),
+            $"{m_context.API.GetTranslation(Translations.QueryClonseCompleteMsg)} {location}"
+            );
+    }
+
     private string ExtractRepoName(string url)
     {
         // Look for the last index of the last slash /

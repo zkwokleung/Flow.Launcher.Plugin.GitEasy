@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddSingleton<ISystemCommandService, SystemCommandService>();
         services.AddSingleton<IGitCommandService, GitCommandService>();
         services.AddSingleton<IGitHubService, GitHubService>();
+        services.AddSingleton<IDirectoryService, DirectoryService>();
 
         return services;
     }
@@ -23,6 +24,7 @@ public static class DependencyInjection
     public static IServiceCollection InjectCommands(this IServiceCollection services)
     {
         services.AddSingleton<ICommand, CloneCommand>();
+        services.AddSingleton<ICommand, OpenCommand>();
 
         return services;
     }

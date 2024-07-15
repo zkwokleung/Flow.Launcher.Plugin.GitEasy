@@ -7,10 +7,19 @@
     <system:String x:Key="giteasy_plugin_description">Easily search for repositories on GitHub or clone any repositories.</system:String>
 
     <!--  Query result  -->
+    <!-- Clone -->
     <system:String x:Key="giteasy_query_result_clone">Clone</system:String>
     <system:String x:Key="giteasy_query_result_clone_desc">Clone a repository with HTTPS or SSH.</system:String>
-    <system:String x:Key="giteasy_query_result_clone_msg">Clone {0} to {1}</system:String>
+    <system:String x:Key="giteasy_query_result_clone_msg">Clone {0} to {1} and open according to the setting</system:String>
     <system:String x:Key="giteasy_query_result_clone_no_repos">No valid repository found.</system:String>
+    <system:String x:Key="giteasy_query_result_clone_hint">Enter the SSH key or the HTTPS URL of the repository</system:String>
+    <system:String x:Key="giteasy_query_result_clone_open_vscode">Clone and open in VS Code</system:String>
+    <system:String x:Key="giteasy_query_result_clone_open_explorer">Clone and open in File Explorer</system:String>
+
+    <!-- Open -->
+    <system:String x:Key="giteasy_query_result_open">Open</system:String>
+    <system:String x:Key="giteasy_query_result_open_desc">Open an existing repository</system:String>
+    <system:String x:Key="giteasy_query_result_open_msg">Open {0}</system:String>
 
     <!--  Message  -->
     <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
