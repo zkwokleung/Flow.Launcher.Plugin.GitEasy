@@ -9,6 +9,8 @@
 
 This is a plugin for the [Flow launcher](https://github.com/Flow-Launcher/Flow.Launcher), allows for quickly cloning repositories and open it, as well as opening existing repositories on command.
 
+This started as a very personal project. You are very welcomed to contribute and adding your own ideas.
+
 ## Features
 
 * Clone repositories and open in File Explorer/VS Code
