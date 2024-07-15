@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Flow.Launcher.Plugin.GitEasy.Utilities;
+﻿namespace Flow.Launcher.Plugin.GitEasy.Utilities;
 
 public static class Translations
 {
@@ -32,6 +26,12 @@ public static class Translations
     public const string QueryInvalidCmd = "giteasy_query_invalid_cmd";
     public const string QueryInvalidCmdMsg = "giteasy_query_invalid_cmd_msg";
 
+    public const string QueryInvalidReposPath = "giteasy_query_invalid_repos_path";
+    public const string QueryOpenSettings = "giteasy_query_open_settings";
+    public const string QueryCreateFolder = "giteasy_query_create_folder";
+
+    public const string MsgFolderCreated = "giteasy_msg_folder_created";
+
     // Program setting
     public const string SrttingsReposPath = "giteasy_settings_repositories_path";
     public const string SettingsReposPathDesc = "giteasy_settings_repositories_path_description";
@@ -39,4 +39,8 @@ public static class Translations
     public const string SettingsGitPathDesc = "giteasy_settings_git_path_description";
     public const string SettingsBrowse = "giteasy_settings_browse";
     public const string SettingsOpenReposIn = "giteasy_settings_open_repos_in";
+
+    // Errors
+    public const string Error = "giteasy_error";
+    public const string ErrorCreateFolderFailed = "giteasy_error_create_folder_failed";
 }
