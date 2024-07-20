@@ -9,5 +9,5 @@ public interface ICommand
     string Title { get; }
     string Description { get; }
     string IconPath { get => Icons.Logo; }
-    List<Result> Resolve(string query);
+    List<Result> Resolve(string query, string actionKeyword);
 }

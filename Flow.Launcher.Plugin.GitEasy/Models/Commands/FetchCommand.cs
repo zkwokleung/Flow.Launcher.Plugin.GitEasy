@@ -32,7 +32,7 @@ public class FetchCommand : ICommand
         _directoryService = directoryService;
     }
 
-    public List<Result> Resolve(string query)
+    public List<Result> Resolve(string query, string actionKeyword)
     {
         // Get a list of all directories under the project folder
         List<string> dirs = _directoryService.GetDirectories(_settingsService.GetSettingsOrDefault().ReposPath);
@@ -47,6 +47,7 @@ public class FetchCommand : ICommand
                 SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultOpenMsg), repoName),
                 IcoPath = IconPath,
                 Score = score,
+                AutoCompleteText = $"{actionKeyword} {Key} {repoName}",
                 Action = _ =>
                 {
                     _gitCommandService.FetchRepos(
