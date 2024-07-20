@@ -75,8 +75,8 @@ public class CommandService : ICommandService
     {
         return new Result
         {
-            Title = _context.API.GetTranslation(Translations.QueryInvalidCmd),
-            SubTitle = _context.API.GetTranslation(Translations.QueryInvalidCmdMsg)
+            Title = _context.API.GetTranslation(Translations.ErrorInvalidCmd),
+            SubTitle = _context.API.GetTranslation(Translations.ErrorInvalidCmdMsg)
         };
     }
     #endregion

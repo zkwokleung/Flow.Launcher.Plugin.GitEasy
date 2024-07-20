@@ -47,21 +47,16 @@ public class GitCommandService : IGitCommandService
             throw new Exception("git.exe not found");
         }
 
-        string output = "";
         Process p = new()
         {
             StartInfo = PrepareGitFetchProcessStartInfo(options)
         };
         p.Start();
-        output += p.StandardOutput.ReadToEnd();
         p.WaitForExit();
-        OnCompleted?.Invoke(
-            new Lazy<GitFetchCompletedEventArgs>(
-                () => new GitFetchCompletedEventArgs()
-                {
-                    Output = output,
-                }).Value
-            );
+        OnCompleted?.Invoke(new()
+        {
+            ExitCode = p.ExitCode,
+        });
     }
 
     private static ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options)
@@ -90,7 +85,6 @@ public class GitCommandService : IGitCommandService
         {
             FileName = "git.exe",
             WorkingDirectory = options.RepoPath,
-            RedirectStandardOutput = true,
         };
 
         info.ArgumentList.Add("fetch");

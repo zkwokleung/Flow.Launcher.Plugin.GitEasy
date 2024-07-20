@@ -1,4 +1,5 @@
 ﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
 using FuzzySharp;
@@ -48,14 +49,30 @@ public class FetchCommand : ICommand
                 Score = score,
                 Action = _ =>
                 {
-                    _gitCommandService.FetchRepos(new()
-                    {
-                        RepoPath = d
-                    },
-                    args =>
-                    {
-                        _context.API.ShowMsg(args.Output, iconPath: Icons.Logo);
-                    });
+                    _gitCommandService.FetchRepos(
+                        new GitFetchCommandOptions()
+                        {
+                            RepoPath = d
+                        },
+                        e =>
+                        {
+                            if (e.ExitCode == 0)
+                            {
+                                _context.API.ShowMsg(
+                                    _context.API.GetTranslation(Translations.QueryFetchComplete),
+                                    string.Format(_context.API.GetTranslation(Translations.QueryFetchCompleteMsg), repoName),
+                                    iconPath: IconPath
+                                );
+                            }
+                            else
+                            {
+                                _context.API.ShowMsgError(
+                                    _context.API.GetTranslation(Translations.Error),
+                                    string.Format(_context.API.GetTranslation(Translations.ErrorFetchMsg), repoName)
+                                );
+                            }
+                        }
+                    );
 
                     return true;
                 }
