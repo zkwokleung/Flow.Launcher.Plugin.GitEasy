@@ -56,6 +56,7 @@
     <PackageReference Include="Flow.Launcher.Plugin" Version="4.3.0" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="ini-parser" Version="2.5.2" />
+    <PackageReference Include="LibGit2Sharp" Version="0.30.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Octokit" Version="13.0.1" />
   </ItemGroup>
