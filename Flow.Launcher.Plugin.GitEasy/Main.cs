@@ -44,7 +44,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
             {
                 new Result
                 {
-                    Title = _context.API.GetTranslation(Translations.QueryInvalidReposPath),
+                    Title = _context.API.GetTranslation(Translations.ErrorInvalidReposPath),
                     SubTitle = _context.API.GetTranslation(Translations.QueryOpenSettings),
                     IcoPath = Icons.Error,
                     Score = 1000,
