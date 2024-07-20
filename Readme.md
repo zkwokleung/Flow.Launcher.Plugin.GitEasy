@@ -19,11 +19,12 @@ This started as a very personal project. You are very welcomed to contribute and
 
 ## Usage
 
-| Command                   | Description                                | Example                                                                   |
-|---------------------------|--------------------------------------------|---------------------------------------------------------------------------|
-| `` ge ``                  | Show all commands                          |                                                                           |
-| `` ge clone <url> ``      | Clone a repository into the project folder | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git `` |
-| `` ge open <repo name> `` | Open a repository in File Explorer/VS Code | `` ge open giteasy ``                                                     |
+| Command                    | Description                                | Example                                                                   |
+|----------------------------|--------------------------------------------|---------------------------------------------------------------------------|
+| `` ge ``                   | Show all commands                          |                                                                           |
+| `` ge clone <url> ``       | Clone a repository into the project folder | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git `` |
+| `` ge open <repo name> ``  | Open a repository in File Explorer/VS Code | `` ge open Flow.Launcher.Plugin.GitEasy ``                                |
+| `` ge fetch <repo name> `` | Fetch a repository                         | `` ge fetch Flow.Launcher.Plugin.GitEasy ``                               |
 
 ## Settings
 
