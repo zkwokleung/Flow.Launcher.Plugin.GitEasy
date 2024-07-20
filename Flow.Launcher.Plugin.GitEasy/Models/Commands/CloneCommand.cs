@@ -10,13 +10,13 @@ namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 public class CloneCommand : ICommand
 {
     public string Key => "clone";
-    public string Title => m_context.API.GetTranslation(Translations.QueryResultClone);
-    public string Description => m_context.API.GetTranslation(Translations.QueryResultCloneDesc);
+    public string Title => _context.API.GetTranslation(Translations.QueryResultClone);
+    public string Description => _context.API.GetTranslation(Translations.QueryResultCloneDesc);
 
-    private PluginInitContext m_context;
-    private IGitCommandService m_gitCommandService;
-    private ISettingsService m_settingsService;
-    private ISystemCommandService m_systemCommandService;
+    private PluginInitContext _context;
+    private IGitCommandService _gitCommandService;
+    private ISettingsService _settingsService;
+    private ISystemCommandService _systemCommandService;
 
     public CloneCommand(
         PluginInitContext context,
@@ -25,10 +25,10 @@ public class CloneCommand : ICommand
         ISystemCommandService systemCommandService
         )
     {
-        m_context = context;
-        m_settingsService = settingsService;
-        m_gitCommandService = gitCommandService;
-        m_systemCommandService = systemCommandService;
+        _context = context;
+        _settingsService = settingsService;
+        _gitCommandService = gitCommandService;
+        _systemCommandService = systemCommandService;
     }
 
     public List<Result> Resolve(string query)
@@ -40,7 +40,7 @@ public class CloneCommand : ICommand
             {
                 new Result
                 {
-                    Title = m_context.API.GetTranslation(Translations.QueryResultCloneHint),
+                    Title = _context.API.GetTranslation(Translations.QueryResultCloneHint),
                     IcoPath = Icons.Logo,
                     Action = _ => true,
                 }
@@ -57,7 +57,7 @@ public class CloneCommand : ICommand
             return new()
             {
                 new Result{
-                    Title= m_context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
+                    Title= _context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
                     IcoPath = Icons.Logo,
                     Action = _ => true,
                 }
@@ -74,31 +74,31 @@ public class CloneCommand : ICommand
         {
             // Default option
             new Result {
-                Title= $"{m_context.API.GetTranslation(Translations.QueryResultClone)} {location}",
-                SubTitle =  string.Format(m_context.API.GetTranslation(Translations.QueryResultCloneMsg), firstRepos, m_settingsService.GetSettingsOrDefault().ReposPath),
+                Title= $"{_context.API.GetTranslation(Translations.QueryResultClone)} {location}",
+                SubTitle =  string.Format(_context.API.GetTranslation(Translations.QueryResultCloneMsg), firstRepos, _settingsService.GetSettingsOrDefault().ReposPath),
                 IcoPath = Icons.Logo,
                 Action = _ =>
                 {
                     try
                     {
-                        m_gitCommandService.CloneRepos(new()
+                        _gitCommandService.CloneRepos(new()
                         {
                             Options = options,
-                            DestinationFolder = m_settingsService.GetSettingsOrDefault().ReposPath,
+                            DestinationFolder = _settingsService.GetSettingsOrDefault().ReposPath,
                             Repo = firstRepos
                         }, () =>
                         {
                             ShowCloneCompleteMsg(location);
                             
                             // Open explorer/vscode after execution
-                            switch(m_settingsService.GetSettingsOrDefault().OpenReposIn)
+                            switch(_settingsService.GetSettingsOrDefault().OpenReposIn)
                             {
                                 case OpenOption.FileExplorer:
-                                    m_systemCommandService.OpenExplorer($"{m_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
+                                    _systemCommandService.OpenExplorer($"{_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
                                     break;
 
                                 case OpenOption.VSCode:
-                                    m_systemCommandService.OpenVsCode($"{m_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
+                                    _systemCommandService.OpenVsCode($"{_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
                                     break;
 
                                 default:
@@ -107,7 +107,7 @@ public class CloneCommand : ICommand
                         });
                     }catch (Exception ex)
                     {
-                        m_context.API.ShowMsgError("Error", ex.Message);
+                        _context.API.ShowMsgError("Error", ex.Message);
                     }
                     return true;
                 }
@@ -116,25 +116,25 @@ public class CloneCommand : ICommand
             // Clone and open in Explorer
             new Result
             {
-                Title= m_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer),
+                Title= _context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer),
                 IcoPath = Icons.Explorer,
                 Action = _ =>
                 {
                     try
                     {
-                        m_gitCommandService.CloneRepos(new()
+                        _gitCommandService.CloneRepos(new()
                         {
                             Options = options,
-                            DestinationFolder = m_settingsService.GetSettingsOrDefault().ReposPath,
+                            DestinationFolder = _settingsService.GetSettingsOrDefault().ReposPath,
                             Repo = firstRepos
                         }, () =>
                         {
                             ShowCloneCompleteMsg(location);
-                            m_systemCommandService.OpenExplorer($"{m_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
+                            _systemCommandService.OpenExplorer($"{_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
                         });
                     }catch (Exception ex)
                     {
-                        m_context.API.ShowMsgError("Error", ex.Message);
+                        _context.API.ShowMsgError("Error", ex.Message);
                     }
                     return true;
                 }
@@ -143,25 +143,25 @@ public class CloneCommand : ICommand
             // Clone and open in VS Code
             new Result
             {
-                Title= m_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode),
+                Title= _context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode),
                 IcoPath = Icons.VSCode,
                 Action = _ =>
                 {
                     try
                     {
-                        m_gitCommandService.CloneRepos(new()
+                        _gitCommandService.CloneRepos(new()
                         {
                             Options = options,
-                            DestinationFolder = m_settingsService.GetSettingsOrDefault().ReposPath,
+                            DestinationFolder = _settingsService.GetSettingsOrDefault().ReposPath,
                             Repo = firstRepos
                         }, () =>
                         {
                             ShowCloneCompleteMsg(location);
-                            m_systemCommandService.OpenVsCode($"{m_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
+                            _systemCommandService.OpenVsCode($"{_settingsService.GetSettingsOrDefault().ReposPath}\\{location}");
                         });
                     }catch (Exception ex)
                     {
-                        m_context.API.ShowMsgError("Error", ex.Message);
+                        _context.API.ShowMsgError("Error", ex.Message);
                     }
                     return true;
                 }
@@ -172,9 +172,9 @@ public class CloneCommand : ICommand
     #region Private Functions
     private void ShowCloneCompleteMsg(string location)
     {
-        m_context.API.ShowMsg(
-            m_context.API.GetTranslation(Translations.QueryCloneComplete),
-            $"{m_context.API.GetTranslation(Translations.QueryClonseCompleteMsg)} {location}"
+        _context.API.ShowMsg(
+            _context.API.GetTranslation(Translations.QueryCloneComplete),
+            $"{_context.API.GetTranslation(Translations.QueryClonseCompleteMsg)} {location}"
             );
     }
 

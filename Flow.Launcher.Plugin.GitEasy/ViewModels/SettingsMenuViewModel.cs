@@ -4,54 +4,53 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Flow.Launcher.Plugin.GitEasy.Models;
 
-namespace Flow.Launcher.Plugin.GitEasy.ViewModels
+namespace Flow.Launcher.Plugin.GitEasy.ViewModels;
+
+public class SettingsMenuViewModel : INotifyPropertyChanged
 {
-    public class SettingsPanelViewModel : INotifyPropertyChanged
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    private Settings _settings;
+
+    public string ReposPath
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private Settings m_settings;
-
-        public string ReposPath
+        get => _settings.ReposPath;
+        set
         {
-            get => m_settings.ReposPath;
-            set
-            {
-                m_settings.ReposPath = value;
-                OnPropertyChanged();
-            }
+            _settings.ReposPath = value;
+            OnPropertyChanged();
         }
+    }
 
-        public string GitPath
+    public string GitPath
+    {
+        get => _settings.GitPath;
+        set
         {
-            get => m_settings.GitPath;
-            set
-            {
-                m_settings.GitPath = value;
-                OnPropertyChanged();
-            }
+            _settings.GitPath = value;
+            OnPropertyChanged();
         }
+    }
 
-        public string[] OpenReposInOptions = Enum.GetValues(typeof(OpenOption)).Cast<OpenOption>().Select(v => v.ToString()).ToArray();
+    public string[] OpenReposInOptions = Enum.GetValues(typeof(OpenOption)).Cast<OpenOption>().Select(v => v.ToString()).ToArray();
 
-        public int SelectedOpenReposInIndex
+    public int SelectedOpenReposInIndex
+    {
+        get => (int)_settings.OpenReposIn;
+        set
         {
-            get => (int)m_settings.OpenReposIn;
-            set
-            {
-                m_settings.OpenReposIn = (OpenOption)value;
-                OnPropertyChanged();
-            }
+            _settings.OpenReposIn = (OpenOption)value;
+            OnPropertyChanged();
         }
+    }
 
-        public SettingsPanelViewModel(Settings settings)
-        {
-            this.m_settings = settings;
-        }
+    public SettingsMenuViewModel(Settings settings)
+    {
+        _settings = settings;
+    }
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

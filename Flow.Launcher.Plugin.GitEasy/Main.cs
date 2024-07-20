@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using Flow.Launcher.Plugin.GitEasy.DI;
+using Flow.Launcher.Plugin.GitEasy.Configurations;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
 
@@ -16,10 +16,10 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
 {
     internal ServiceProvider ServiceProvider { get; private set; }
 
-    private PluginInitContext m_context { get; set; }
-    private ICommandService m_commandService { get; set; }
-    private ISettingsService m_settingsService { get; set; }
-    private IDirectoryService m_directoryService { get; set; }
+    private PluginInitContext _context;
+    private ICommandService _commandService;
+    private ISettingsService _settingsService;
+    private IDirectoryService _directoryService;
 
     #region Flow.Launcher Interface Functions
     public async Task InitAsync(PluginInitContext context)
@@ -29,46 +29,46 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
                                 .InjectCommands()
                                 .BuildServiceProvider();
 
-        m_context = context;
-        m_commandService = ServiceProvider.GetService<ICommandService>();
-        m_settingsService = ServiceProvider.GetService<ISettingsService>();
-        m_directoryService = ServiceProvider.GetService<IDirectoryService>();
+        _context = context;
+        _commandService = ServiceProvider.GetService<ICommandService>();
+        _settingsService = ServiceProvider.GetService<ISettingsService>();
+        _directoryService = ServiceProvider.GetService<IDirectoryService>();
     }
 
     public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
     {
         // Verify the repositories path before running any command
-        if (!m_directoryService.VerifyRepositoriesPath())
+        if (!_directoryService.VerifyRepositoriesPath())
         {
             return new()
             {
                 new Result
                 {
-                    Title = m_context.API.GetTranslation(Translations.QueryInvalidReposPath),
-                    SubTitle = m_context.API.GetTranslation(Translations.QueryOpenSettings),
+                    Title = _context.API.GetTranslation(Translations.QueryInvalidReposPath),
+                    SubTitle = _context.API.GetTranslation(Translations.QueryOpenSettings),
                     IcoPath = Icons.Error,
                     Score = 1000,
                     Action = _ =>
                     {
-                        m_context.API.OpenSettingDialog();
+                        _context.API.OpenSettingDialog();
                         return true;
                     }
                 },
                 new Result
                 {
-                    Title = string.Format(m_context.API.GetTranslation(Translations.QueryCreateFolder), m_settingsService.GetSettingsOrDefault().ReposPath),
+                    Title = string.Format(_context.API.GetTranslation(Translations.QueryCreateFolder), _settingsService.GetSettingsOrDefault().ReposPath),
                     IcoPath = Icons.Explorer,
                     Action = _ =>
                     {
                         try
                         {
-                            m_directoryService.CreateRepositoriesDirectory();
-                            m_context.API.ShowMsg(string.Format(m_context.API.GetTranslation(Translations.MsgFolderCreated),m_settingsService.GetSettingsOrDefault().ReposPath));
+                            _directoryService.CreateRepositoriesDirectory();
+                            _context.API.ShowMsg(string.Format(_context.API.GetTranslation(Translations.MsgFolderCreated),_settingsService.GetSettingsOrDefault().ReposPath));
                         }
                         catch (Exception ex)
                         {
-                            m_context.API.ShowMsgError(
-                                string.Format($"{m_context.API.GetTranslation(Translations.Error)}: {m_context.API.GetTranslation(Translations.ErrorCreateFolderFailed)}"),
+                            _context.API.ShowMsgError(
+                                string.Format($"{_context.API.GetTranslation(Translations.Error)}: {_context.API.GetTranslation(Translations.ErrorCreateFolderFailed)}"),
                                 ex.Message
                             );
                         }
@@ -78,17 +78,17 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
             };
         }
 
-        return await m_commandService.Resolve(query);
+        return await _commandService.Resolve(query);
     }
 
     public string GetTranslatedPluginTitle()
     {
-        return m_context.API.GetTranslation(Translations.PluginTitle);
+        return _context.API.GetTranslation(Translations.PluginTitle);
     }
 
     public string GetTranslatedPluginDescription()
     {
-        return m_context.API.GetTranslation(Translations.PluginDesc);
+        return _context.API.GetTranslation(Translations.PluginDesc);
     }
 
     public static void StartProcess(Func<ProcessStartInfo, Process> runProcess, ProcessStartInfo info)
@@ -98,7 +98,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
 
     public Control CreateSettingPanel()
     {
-        return new SettingsPanel(m_context, m_settingsService.GetSettingsOrDefault());
+        return new SettingsMenu(_context, _settingsService.GetSettingsOrDefault());
     }
     #endregion
 }

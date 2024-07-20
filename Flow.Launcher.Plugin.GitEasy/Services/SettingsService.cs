@@ -11,13 +11,13 @@ namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public class SettingsService : ISettingsService
 {
-    private PluginInitContext m_context;
-    private Settings m_settings;
+    private PluginInitContext _context;
+    private Settings _settings;
 
     public SettingsService(PluginInitContext context)
     {
-        m_context = context;
-        m_settings = m_context.API.LoadSettingJsonStorage<Settings>();
+        _context = context;
+        _settings = _context.API.LoadSettingJsonStorage<Settings>();
     }
 
     public Settings GetDefault()
@@ -27,11 +27,11 @@ public class SettingsService : ISettingsService
 
     public Settings GetSettings()
     {
-        return m_settings;
+        return _settings;
     }
 
     public Settings GetSettingsOrDefault()
     {
-        return m_settings ??= new();
+        return _settings ??= new();
     }
 }
