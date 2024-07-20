@@ -4,7 +4,7 @@ using Flow.Launcher.Plugin.GitEasy.Services;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Flow.Launcher.Plugin.GitEasy.DI;
+namespace Flow.Launcher.Plugin.GitEasy.Configurations;
 
 public static class DependencyInjection
 {
@@ -25,6 +25,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<ICommand, CloneCommand>();
         services.AddSingleton<ICommand, OpenCommand>();
+        services.AddSingleton<ICommand, FetchCommand>();
 
         return services;
     }

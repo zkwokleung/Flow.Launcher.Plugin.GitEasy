@@ -9,11 +9,11 @@ namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public class DirectoryService : IDirectoryService
 {
-    private ISettingsService m_settingsService;
+    private ISettingsService _settingsService;
 
     public DirectoryService(ISettingsService settingsService)
     {
-        m_settingsService = settingsService;
+        _settingsService = settingsService;
     }
 
     public List<string> GetDirectories(string path)
@@ -23,7 +23,7 @@ public class DirectoryService : IDirectoryService
 
     public bool VerifyRepositoriesPath()
     {
-        string path = m_settingsService.GetSettingsOrDefault().ReposPath;
+        string path = _settingsService.GetSettingsOrDefault().ReposPath;
 
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -50,6 +50,6 @@ public class DirectoryService : IDirectoryService
 
     public void CreateRepositoriesDirectory()
     {
-        CreateDirectory(m_settingsService.GetSettingsOrDefault().ReposPath);
+        CreateDirectory(_settingsService.GetSettingsOrDefault().ReposPath);
     }
 }

@@ -19,17 +19,19 @@ public static class Translations
     public const string QueryResultOpenDesc = "giteasy_query_result_open_desc";
     public const string QueryResultOpenMsg = "giteasy_query_result_open_msg";
 
+    public const string QueryResultFetch = "giteasy_query_result_fetch";
+    public const string QueryResultFetchDesc = "giteasy_query_result_fetch_desc";
+    public const string QueryResultFetchMsg = "giteasy_query_result_fetch_msg";
+
     // Message
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
     public const string QueryClonseCompleteMsg = "giteasy_query_clone_complete_msg";
 
-    public const string QueryInvalidCmd = "giteasy_query_invalid_cmd";
-    public const string QueryInvalidCmdMsg = "giteasy_query_invalid_cmd_msg";
+    public const string QueryFetchComplete = "giteasy_query_fetch_complete";
+    public const string QueryFetchCompleteMsg = "giteasy_query_fetch_complete_msg";
 
-    public const string QueryInvalidReposPath = "giteasy_query_invalid_repos_path";
     public const string QueryOpenSettings = "giteasy_query_open_settings";
     public const string QueryCreateFolder = "giteasy_query_create_folder";
-
     public const string MsgFolderCreated = "giteasy_msg_folder_created";
 
     // Program setting
@@ -42,5 +44,10 @@ public static class Translations
 
     // Errors
     public const string Error = "giteasy_error";
+
     public const string ErrorCreateFolderFailed = "giteasy_error_create_folder_failed";
+    public const string ErrorInvalidCmd = "giteasy_error_invalid_cmd";
+    public const string ErrorInvalidCmdMsg = "giteasy_error_invalid_cmd_msg";
+    public const string ErrorInvalidReposPath = "giteasy_error_invalid_repos_path";
+    public const string ErrorFetchMsg = "giteasy_error_fetch_msg";
 }

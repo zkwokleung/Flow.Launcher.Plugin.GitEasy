@@ -21,16 +21,20 @@
     <system:String x:Key="giteasy_query_result_open_desc">Open an existing repository</system:String>
     <system:String x:Key="giteasy_query_result_open_msg">Open {0}</system:String>
 
-    <!--  Message  -->
+    <!-- Fetch -->
+    <system:String x:Key="giteasy_query_result_fetch">Fetch</system:String>
+    <system:String x:Key="giteasy_query_result_fetch_desc">Fetch a repository</system:String>
+    <system:String x:Key="giteasy_query_result_fetch_msg">Fetch {0}</system:String>
+
+    <!--  Messages -->
     <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
     <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>
+
+    <system:String x:Key="giteasy_query_fetch_complete">Fetch Completed</system:String>
+    <system:String x:Key="giteasy_query_fetch_complete_msg">{0} is fetched.</system:String>
     
-    <system:String x:Key="giteasy_query_invalid_cmd">Invalid Command</system:String>
-    <system:String x:Key="giteasy_query_invalid_cmd_msg">Please double check your command.</system:String>
-    <system:String x:Key="giteasy_query_invalid_repos_path">Invalid repositories path. Please specify it in the plugin setting.</system:String>
     <system:String x:Key="giteasy_query_open_settings">Open plugin settings</system:String>
     <system:String x:Key="giteasy_query_create_folder">Create the folder {0}</system:String>
-
     <system:String x:Key="giteasy_msg_folder_created">Folder created at {0}.</system:String>
 
     <!--  Program setting  -->
@@ -44,4 +48,9 @@
     <!-- Errors -->
     <system:String x:Key="giteasy_error">Error</system:String>
     <system:String x:Key="giteasy_error_create_folder_failed">Failed to create folder at {0}.</system:String>
+    <system:String x:Key="giteasy_error_invalid_cmd">Invalid Command</system:String>
+    <system:String x:Key="giteasy_error_invalid_cmd_msg">Please double check your command.</system:String>
+    <system:String x:Key="giteasy_error_invalid_repos_path">Invalid repositories path. Please specify it in the plugin setting.</system:String>
+
+    <system:String x:Key="giteasy_error_fetch_msg">Error fetching {0}</system:String>
 </ResourceDictionary>
