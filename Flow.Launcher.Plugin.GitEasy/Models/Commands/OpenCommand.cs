@@ -33,7 +33,7 @@ public class OpenCommand : ICommand
         _systemCommandService = systemCommandService;
     }
 
-    public List<Result> Resolve(string query)
+    public List<Result> Resolve(string query, string actionKeyword)
     {
         // Get a list of all directories under the project folder
         List<string> dirs = _directoryService.GetDirectories(_settingsService.GetSettingsOrDefault().ReposPath);
@@ -48,6 +48,7 @@ public class OpenCommand : ICommand
                 SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultOpenMsg), repoName),
                 IcoPath = IconPath,
                 Score = score,
+                AutoCompleteText = $"{actionKeyword} {Key} {repoName}",
                 Action = _ =>
                 {
                     switch (_settingsService.GetSettingsOrDefault().OpenReposIn)

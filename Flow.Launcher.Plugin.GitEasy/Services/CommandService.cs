@@ -33,7 +33,7 @@ public class CommandService : ICommandService
         // Try to execute existing commands
         if (_commands.TryGetValue(args[0], out ICommand result))
         {
-            return result.Resolve(String.Join(" ", args.Skip(1)));
+            return result.Resolve(string.Join(" ", args.Skip(1)), query.ActionKeyword);
         }
 
         // Match possible commands

@@ -31,7 +31,7 @@ public class CloneCommand : ICommand
         _systemCommandService = systemCommandService;
     }
 
-    public List<Result> Resolve(string query)
+    public List<Result> Resolve(string query, string actionKeyword)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
