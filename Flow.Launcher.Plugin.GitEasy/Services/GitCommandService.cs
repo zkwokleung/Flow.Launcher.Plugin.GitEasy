@@ -1,4 +1,5 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.EventArgs;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using System;
 using System.Diagnostics;
@@ -34,7 +35,36 @@ public class GitCommandService : IGitCommandService
         OnCompleted?.Invoke();
     }
 
-    private ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options)
+    public void FetchRepos(GitFetchCommandOptions options, Action<GitFetchCompletedEventArgs> OnCompleted = null)
+    {
+        if (string.IsNullOrWhiteSpace(options.RepoPath))
+        {
+            throw new ArgumentException("Repo can not be null or empty");
+        }
+
+        if (!File.Exists(GetGitExecutable(_settingService.GetSettingsOrDefault().GitPath)))
+        {
+            throw new Exception("git.exe not found");
+        }
+
+        string output = "";
+        Process p = new()
+        {
+            StartInfo = PrepareGitFetchProcessStartInfo(options)
+        };
+        p.Start();
+        output += p.StandardOutput.ReadToEnd();
+        p.WaitForExit();
+        OnCompleted?.Invoke(
+            new Lazy<GitFetchCompletedEventArgs>(
+                () => new GitFetchCompletedEventArgs()
+                {
+                    Output = output,
+                }).Value
+            );
+    }
+
+    private static ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options)
     {
         ProcessStartInfo info = new()
         {
@@ -50,6 +80,20 @@ public class GitCommandService : IGitCommandService
         }
 
         info.ArgumentList.Add(options.Repo);
+
+        return info;
+    }
+
+    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(GitFetchCommandOptions options)
+    {
+        ProcessStartInfo info = new()
+        {
+            FileName = "git.exe",
+            WorkingDirectory = options.RepoPath,
+            RedirectStandardOutput = true,
+        };
+
+        info.ArgumentList.Add("fetch");
 
         return info;
     }

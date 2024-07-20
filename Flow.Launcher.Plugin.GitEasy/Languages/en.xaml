@@ -21,6 +21,11 @@
     <system:String x:Key="giteasy_query_result_open_desc">Open an existing repository</system:String>
     <system:String x:Key="giteasy_query_result_open_msg">Open {0}</system:String>
 
+    <!-- Fetch -->
+    <system:String x:Key="giteasy_query_result_fetch">Fetch</system:String>
+    <system:String x:Key="giteasy_query_result_fetch_desc">Fetch a repository</system:String>
+    <system:String x:Key="giteasy_query_result_fetch_msg">Fetch {0}</system:String>
+
     <!--  Message  -->
     <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
     <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>

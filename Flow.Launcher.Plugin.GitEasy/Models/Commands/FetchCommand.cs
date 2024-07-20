@@ -2,35 +2,33 @@
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
 using FuzzySharp;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
-public class OpenCommand : ICommand
+public class FetchCommand : ICommand
 {
-    public string Key => "open";
-    public string Title => _context.API.GetTranslation(Translations.QueryResultOpen);
-    public string Description => _context.API.GetTranslation(Translations.QueryResultOpenDesc);
+    public string Key => "fetch";
+    public string Title => _context.API.GetTranslation(Translations.QueryResultFetch);
+    public string Description => _context.API.GetTranslation(Translations.QueryResultFetchDesc);
     public string IconPath => Icons.Logo;
 
     private readonly PluginInitContext _context;
     private readonly ISettingsService _settingsService;
+    private readonly IGitCommandService _gitCommandService;
     private readonly IDirectoryService _directoryService;
-    private readonly ISystemCommandService _systemCommandService;
 
-    public OpenCommand(
+    public FetchCommand(
         PluginInitContext context,
         ISettingsService settingsService,
-        IDirectoryService directoryService,
-        ISystemCommandService systemCommandService
-        )
+        IGitCommandService gitCommandService,
+        IDirectoryService directoryService)
     {
         _context = context;
         _settingsService = settingsService;
+        _gitCommandService = gitCommandService;
         _directoryService = directoryService;
-        _systemCommandService = systemCommandService;
     }
 
     public List<Result> Resolve(string query)
@@ -50,18 +48,15 @@ public class OpenCommand : ICommand
                 Score = score,
                 Action = _ =>
                 {
-                    switch (_settingsService.GetSettingsOrDefault().OpenReposIn)
+                    _gitCommandService.FetchRepos(new()
                     {
-                        case OpenOption.VSCode:
-                            _systemCommandService.OpenVsCode(d);
-                            break;
+                        RepoPath = d
+                    },
+                    args =>
+                    {
+                        _context.API.ShowMsg(args.Output, iconPath: Icons.Logo);
+                    });
 
-                        case OpenOption.FileExplorer:
-                        case OpenOption.None:
-                        default:
-                            _systemCommandService.OpenExplorer(d);
-                            break;
-                    }
                     return true;
                 }
             };

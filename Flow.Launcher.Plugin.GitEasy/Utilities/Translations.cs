@@ -19,6 +19,10 @@ public static class Translations
     public const string QueryResultOpenDesc = "giteasy_query_result_open_desc";
     public const string QueryResultOpenMsg = "giteasy_query_result_open_msg";
 
+    public const string QueryResultFetch = "giteasy_query_result_fetch";
+    public const string QueryResultFetchDesc = "giteasy_query_result_fetch_desc";
+    public const string QueryResultFetchMsg = "giteasy_query_result_fetch_msg";
+
     // Message
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
     public const string QueryClonseCompleteMsg = "giteasy_query_clone_complete_msg";
