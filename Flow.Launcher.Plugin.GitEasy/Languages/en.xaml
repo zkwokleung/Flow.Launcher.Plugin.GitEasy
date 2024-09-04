@@ -1,7 +1,6 @@
-﻿<ResourceDictionary
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:system="clr-namespace:System;assembly=mscorlib">
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <system:String x:Key="giteasy_plugin_title">Git Easy</system:String>
     <system:String x:Key="giteasy_plugin_description">Easily search for repositories on GitHub or clone any repositories.</system:String>
@@ -26,16 +25,24 @@
     <system:String x:Key="giteasy_query_result_fetch_desc">Fetch a repository</system:String>
     <system:String x:Key="giteasy_query_result_fetch_msg">Fetch {0}</system:String>
 
+    <!-- Select -->
+    <system:String x:Key="giteasy_query_result_select">Select</system:String>
+    <system:String x:Key="giteasy_query_result_select_desc">Select a repository to control and run commands on</system:String>
+    <system:String x:Key="giteasy_query_result_select_msg">Select {0}</system:String>
+
     <!--  Messages -->
     <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
     <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>
 
     <system:String x:Key="giteasy_query_fetch_complete">Fetch Completed</system:String>
     <system:String x:Key="giteasy_query_fetch_complete_msg">{0} is fetched.</system:String>
-    
+
     <system:String x:Key="giteasy_query_open_settings">Open plugin settings</system:String>
     <system:String x:Key="giteasy_query_create_folder">Create the folder {0}</system:String>
     <system:String x:Key="giteasy_msg_folder_created">Folder created at {0}.</system:String>
+
+    <system:String x:Key="giteasy_msg_repo_selected">Selected {0}</system:String>
+    <system:String x:Key="giteasy_msg_repo_selected_desc">Git commands will be ran on this repository.</system:String>
 
     <!--  Program setting  -->
     <system:String x:Key="giteasy_settings_repositories_path">Repositories Path</system:String>
@@ -44,6 +51,8 @@
     <system:String x:Key="giteasy_settings_git_path_description">The folder containing the git executable.</system:String>
     <system:String x:Key="giteasy_settings_browse">Browse</system:String>
     <system:String x:Key="giteasy_settings_open_repos_in">Open Repository In</system:String>
+    <system:String x:Key="giteasy_settings_active_repo">Active Repository</system:String>
+    <system:String x:Key="giteasy_settings_active_repo_description">The target repository to run git commands on.</system:String>
 
     <!-- Errors -->
     <system:String x:Key="giteasy_error">Error</system:String>

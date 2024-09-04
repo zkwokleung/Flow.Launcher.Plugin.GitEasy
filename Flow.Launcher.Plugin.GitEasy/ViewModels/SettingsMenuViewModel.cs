@@ -10,8 +10,9 @@ public class SettingsMenuViewModel : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler PropertyChanged;
 
-    private Settings _settings;
+    private readonly Settings _settings;
 
+    #region Properties
     public string ReposPath
     {
         get => _settings.ReposPath;
@@ -43,6 +44,17 @@ public class SettingsMenuViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+    public string ActiveRepo
+    {
+        get => _settings.ActiveRepo;
+        set
+        {
+            _settings.ActiveRepo = value;
+            OnPropertyChanged();
+        }
+    }
+    #endregion
 
     public SettingsMenuViewModel(Settings settings)
     {

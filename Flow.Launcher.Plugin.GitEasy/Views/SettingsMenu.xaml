@@ -13,12 +13,15 @@
             <Grid.RowDefinitions>
                 <RowDefinition MinHeight="45" />
                 <RowDefinition MinHeight="45" />
+                <RowDefinition MinHeight="45" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.5*" />
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
+
+            <!-- Row 0 -->
             <Label x:Name="lblReposPath"
                    Grid.Row="0"
                    Grid.Column="0"
@@ -48,6 +51,8 @@
                     FontSize="16"
                     MinWidth="60"
                     Click="OnBtnBrowseReposPathClick" />
+
+            <!-- Row 1 -->
             <Label x:Name="lblOpenClonedReposIn"
                    Grid.Row="1"
                    Grid.Column="0"
@@ -64,6 +69,37 @@
                       SelectedIndex="{Binding SelectedOpenReposInIndex}"
                       Margin="10,0,10,0"
                       VerticalAlignment="Center" />
+
+            <!-- Row 2 -->
+            <Label x:Name="lblActiveRepo"
+                   Grid.Row="2"
+                   Grid.Column="0"
+                   Content="{DynamicResource giteasy_settings_active_repo}"
+                   Margin="0,0,10,0"
+                   VerticalAlignment="Center"
+                   FontSize="16"
+                   MinWidth="120"
+                   Height="25" />
+            <TextBox x:Name="tbActiveRepoPath"
+                     Grid.Row="2"
+                     Grid.Column="1"
+                     Margin="10,14,10,14"
+                     TextWrapping="Wrap"
+                     Text="{Binding ActiveRepo}"
+                     ToolTip="{DynamicResource giteasy_settings_active_repository_textbox_placeholder}"
+                     VerticalAlignment="Center"
+                     FontSize="16"
+                     MinWidth="120"
+                     Height="25" />
+            <Button x:Name="btnBrowseActiveRepo"
+                    Grid.Row="2"
+                    Grid.Column="2"
+                    Content="..."
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    MinWidth="60"
+                    Click="OnBtnBrowseActiveRepoClick" />
         </Grid>
     </DockPanel>
 </UserControl>

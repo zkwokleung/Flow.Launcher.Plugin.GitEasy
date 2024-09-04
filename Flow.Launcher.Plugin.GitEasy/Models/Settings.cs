@@ -12,4 +12,6 @@ public class Settings
     public string ReposPath { get; set; } = "C:\\Repos";
     public string GitPath { get; set; } = "C:\\Program Files\\Git\\bin";
     public OpenOption OpenReposIn { get; set; } = OpenOption.None;
+    public string ActiveRepo { get; set; } = "";
+    public bool SelectRepoOnOpen { get; set; } = true;
 }

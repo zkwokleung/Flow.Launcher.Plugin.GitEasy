@@ -28,6 +28,17 @@ public partial class SettingsMenu : UserControl
         cbOpenReposIn.ItemsSource = Enum.GetValues(typeof(OpenOption)).Cast<OpenOption>();
     }
 
+    private void OnBtnBrowseActiveRepoClick(object sender, RoutedEventArgs e)
+    {
+        using FolderBrowserDialog fbd = new();
+        DialogResult result = fbd.ShowDialog();
+
+        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+        {
+            _settingsPanelViewModel.ActiveRepo = fbd.SelectedPath;
+        }
+    }
+
     private void OnBtnBrowseReposPathClick(object sender, RoutedEventArgs e)
     {
         using FolderBrowserDialog fbd = new();

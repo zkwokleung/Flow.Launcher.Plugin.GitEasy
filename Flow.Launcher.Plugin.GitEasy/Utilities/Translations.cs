@@ -23,6 +23,10 @@ public static class Translations
     public const string QueryResultFetchDesc = "giteasy_query_result_fetch_desc";
     public const string QueryResultFetchMsg = "giteasy_query_result_fetch_msg";
 
+    public const string QueryResultSelect = "giteasy_query_result_select";
+    public const string QueryResultSelectDesc = "giteasy_query_result_select_desc";
+    public const string QueryResultSelectMsg = "giteasy_query_result_select_msg";
+
     // Message
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
     public const string QueryClonseCompleteMsg = "giteasy_query_clone_complete_msg";
@@ -33,6 +37,9 @@ public static class Translations
     public const string QueryOpenSettings = "giteasy_query_open_settings";
     public const string QueryCreateFolder = "giteasy_query_create_folder";
     public const string MsgFolderCreated = "giteasy_msg_folder_created";
+
+    public const string MsgRepoSelected = "giteasy_msg_repo_selected";
+    public const string MsgRepoSelectedDesc = "giteasy_msg_repo_selected_desc";
 
     // Program setting
     public const string SrttingsReposPath = "giteasy_settings_repositories_path";

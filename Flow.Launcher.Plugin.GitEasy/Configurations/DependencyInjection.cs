@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddSingleton<ICommand, CloneCommand>();
         services.AddSingleton<ICommand, OpenCommand>();
         services.AddSingleton<ICommand, FetchCommand>();
+        services.AddSingleton<ICommand, SelectCommand>();
 
         return services;
     }
