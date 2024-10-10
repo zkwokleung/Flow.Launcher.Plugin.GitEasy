@@ -43,9 +43,9 @@ public partial class SettingsMenu : UserControl
     {
         const string filter = "git.exe | git.exe";
         var ofd = new OpenFileDialog { Filter = filter };
-        var result = dialog.ShowDialog();
+        var result = ofd.ShowDialog();
 
-        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(ofd.SelectedPath))
+        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(ofd.FileName))
         {
             _settingsPanelViewModel.GitPath = ofd.FileName;
         }

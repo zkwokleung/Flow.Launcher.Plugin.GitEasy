@@ -10,6 +10,6 @@ public enum OpenOption
 public class Settings
 {
     public string ReposPath { get; set; } = "C:\\Repos";
-    public string GitPath { get; set; } = "C:\\Program Files\\Git\\bin";
+    public string GitPath { get; set; } = "C:\\Program Files\\Git\\bin\\git.exe";
     public OpenOption OpenReposIn { get; set; } = OpenOption.None;
 }
