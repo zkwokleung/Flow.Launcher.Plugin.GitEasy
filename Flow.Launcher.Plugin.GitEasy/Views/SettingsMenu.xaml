@@ -13,6 +13,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition MinHeight="45" />
                 <RowDefinition MinHeight="45" />
+                <RowDefinition MinHeight="45" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.5*" />
@@ -64,6 +65,35 @@
                       SelectedIndex="{Binding SelectedOpenReposInIndex}"
                       Margin="10,0,10,0"
                       VerticalAlignment="Center" />
+            <Label x:Name="lblGitPath"
+                   Grid.Row="2"
+                   Grid.Column="0"
+                   Content="{DynamicResource giteasy_settings_git_path}"
+                   Margin="0,0,10,0"
+                   VerticalAlignment="Center"
+                   FontSize="16"
+                   MinWidth="120"
+                   Height="25" />
+            <TextBox x:Name="tbGitPath"
+                     Grid.Row="2"
+                     Grid.Column="1"
+                     Margin="10,14,10,14"
+                     TextWrapping="Wrap"
+                     Text="{Binding GitPath}"
+                     ToolTip="{DynamicResource giteasy_settings_git_path_textbox_placeholder}"
+                     VerticalAlignment="Center"
+                     FontSize="16"
+                     MinWidth="120"
+                     Height="25" />
+            <Button x:Name="btnBrowseGit"
+                    Grid.Row="2"
+                    Grid.Column="2"
+                    Content="..."
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    MinWidth="60"
+                    Click="OnBtnBrowseGitPathClick" />
         </Grid>
     </DockPanel>
 </UserControl>

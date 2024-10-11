@@ -9,7 +9,6 @@ namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public class GitCommandService : IGitCommandService
 {
-    private const string GIT_EXE = "git.exe";
 
     private readonly ISettingsService _settingService;
 
@@ -25,7 +24,7 @@ public class GitCommandService : IGitCommandService
             throw new ArgumentException("Repo can not be null or empty");
         }
 
-        if (!File.Exists(GetGitExecutable(_settingService.GetSettingsOrDefault().GitPath)))
+        if (!File.Exists(_settingService.GetSettingsOrDefault().GitPath))
         {
             throw new Exception("git.exe not found");
         }
@@ -42,7 +41,7 @@ public class GitCommandService : IGitCommandService
             throw new ArgumentException("Repo can not be null or empty");
         }
 
-        if (!File.Exists(GetGitExecutable(_settingService.GetSettingsOrDefault().GitPath)))
+        if (!File.Exists(_settingService.GetSettingsOrDefault().GitPath))
         {
             throw new Exception("git.exe not found");
         }
@@ -92,8 +91,4 @@ public class GitCommandService : IGitCommandService
         return info;
     }
 
-    private static string GetGitExecutable(string path)
-    {
-        return $"{path}\\{GIT_EXE}";
-    }
 }
