@@ -41,12 +41,13 @@ public partial class SettingsMenu : UserControl
 
     private void OnBtnBrowseGitPathClick(object sender, RoutedEventArgs e)
     {
-        using FolderBrowserDialog fbd = new();
-        DialogResult result = fbd.ShowDialog();
+        const string filter = "git.exe | git.exe";
+        var ofd = new OpenFileDialog { Filter = filter };
+        var result = ofd.ShowDialog();
 
-        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(ofd.FileName))
         {
-            _settingsPanelViewModel.ReposPath = fbd.SelectedPath;
+            _settingsPanelViewModel.GitPath = ofd.FileName;
         }
     }
 }

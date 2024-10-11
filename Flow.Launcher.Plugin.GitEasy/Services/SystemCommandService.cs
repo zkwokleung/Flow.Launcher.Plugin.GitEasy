@@ -25,7 +25,8 @@ public class SystemCommandService : ISystemCommandService
         ProcessStartInfo info = new()
         {
             FileName = "cmd.exe",
-            Arguments = $"/c code \"{path}\""
+            Arguments = $"/c code \"{path}\"",
+            WindowStyle = ProcessWindowStyle.Hidden,
         };
 
         Process.Start(info).WaitForExit();
