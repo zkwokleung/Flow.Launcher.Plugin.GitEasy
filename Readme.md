@@ -32,6 +32,7 @@ This started as a very personal project. You are very welcomed to contribute and
 |--------------------|------------------------------------------------------------------------------------------------------|
 | Repositories Path  | The local project folder, containing all the repositories.                                           |
 | Open Repository In | Specify what to do after cloning the repository. <br> Options: ``None``, ``VSCode``,``FileExplorer`` |
+| Git Path           | Specify the path to your git.exe (set to default installation directory)                             |
 
 ## TODO
 
