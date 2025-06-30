@@ -4,7 +4,7 @@
   "Name": "Git Easy",
   "Description": "Provide easy access to repositories. Allows quickly cloning repository and open in vscode/file explorer.",
   "Author": "zkwokleung",
-  "Version": "0.4.0",
+  "Version": "0.5.0",
   "Language": "csharp",
   "Website": "https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy",
   "IcoPath": "Images/icon.png",
