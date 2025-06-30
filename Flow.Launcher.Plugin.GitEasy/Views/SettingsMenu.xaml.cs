@@ -35,7 +35,23 @@ public partial class SettingsMenu : UserControl
 
         if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
         {
-            _settingsPanelViewModel.ReposPath = fbd.SelectedPath;
+            if (sender is System.Windows.Controls.Button btn && btn.Tag is string oldPath)
+            {
+                _settingsPanelViewModel.UpdateRepoPath(oldPath, fbd.SelectedPath);
+            }
+        }
+    }
+
+    private void OnBtnAddReposPathClick(object sender, RoutedEventArgs e)
+    {
+        _settingsPanelViewModel.AddRepoPath();
+    }
+
+    private void OnBtnRemoveReposPathClick(object sender, RoutedEventArgs e)
+    {
+        if(sender is System.Windows.Controls.Button btn && btn.Tag is string path)
+        {
+            _settingsPanelViewModel.RemoveRepoPath(path);
         }
     }
 

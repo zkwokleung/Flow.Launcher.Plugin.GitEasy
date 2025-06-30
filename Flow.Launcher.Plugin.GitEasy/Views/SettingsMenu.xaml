@@ -1,92 +1,66 @@
 ﻿<UserControl x:Class="Flow.Launcher.Plugin.GitEasy.Views.SettingsMenu"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:Flow.Launcher.Plugin.GitEasy.Views"
-             xmlns:viewmodels="clr-namespace:Flow.Launcher.Plugin.GitEasy.ViewModels"
-             d:DataContext="{d:DesignInstance Type=viewmodels:SettingsMenuViewModel}"
-             mc:Ignorable="d">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Flow.Launcher.Plugin.GitEasy.Views"
+    xmlns:viewmodels="clr-namespace:Flow.Launcher.Plugin.GitEasy.ViewModels"
+    d:DataContext="{d:DesignInstance Type=viewmodels:SettingsMenuViewModel}"
+    mc:Ignorable="d">
     <DockPanel Margin="70,0,20,0"
-               HorizontalAlignment="Stretch">
-        <Grid Margin="0">
-            <Grid.RowDefinitions>
-                <RowDefinition MinHeight="45" />
-                <RowDefinition MinHeight="45" />
-                <RowDefinition MinHeight="45" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.5*" />
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="1*" />
-            </Grid.ColumnDefinitions>
-            <Label x:Name="lblReposPath"
-                   Grid.Row="0"
-                   Grid.Column="0"
-                   Content="{DynamicResource giteasy_settings_repositories_path}"
-                   Margin="0,0,10,0"
-                   VerticalAlignment="Center"
-                   FontSize="16"
-                   MinWidth="120"
-                   Height="25" />
-            <TextBox x:Name="tbReposPath"
-                     Grid.Row="0"
-                     Grid.Column="1"
-                     Margin="10,14,10,14"
-                     TextWrapping="Wrap"
-                     Text="{Binding ReposPath}"
-                     ToolTip="{DynamicResource giteasy_settings_repositories_path_textbox_placeholder}"
-                     VerticalAlignment="Center"
-                     FontSize="16"
-                     MinWidth="120"
-                     Height="25" />
-            <Button x:Name="btnBrowse"
+        HorizontalAlignment="Stretch">
+        <StackPanel>
+            <!-- Main Settings -->
+            <Grid Margin="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition MinHeight="45" />
+                    <RowDefinition MinHeight="45" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.5*" />
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <!-- Open cloned repo in -->
+                <Label x:Name="lblOpenClonedReposIn"
                     Grid.Row="0"
-                    Grid.Column="2"
-                    Content="..."
-                    Margin="10,0,0,0"
+                    Grid.Column="0"
                     VerticalAlignment="Center"
                     FontSize="16"
-                    MinWidth="60"
-                    Click="OnBtnBrowseReposPathClick" />
-            <Label x:Name="lblOpenClonedReposIn"
-                   Grid.Row="1"
-                   Grid.Column="0"
-                   VerticalAlignment="Center"
-                   FontSize="16"
-                   MinWidth="120"
-                   Content="{DynamicResource giteasy_settings_open_repos_in}"
-                   Height="25"
-                   Margin="0,0,10,0" />
-            <ComboBox x:Name="cbOpenReposIn"
-                      Grid.Row="1"
-                      Grid.Column="1"
-                      Width="120"
-                      SelectedIndex="{Binding SelectedOpenReposInIndex}"
-                      Margin="10,0,10,0"
-                      VerticalAlignment="Center" />
-            <Label x:Name="lblGitPath"
-                   Grid.Row="2"
-                   Grid.Column="0"
-                   Content="{DynamicResource giteasy_settings_git_path}"
-                   Margin="0,0,10,0"
-                   VerticalAlignment="Center"
-                   FontSize="16"
-                   MinWidth="120"
-                   Height="25" />
-            <TextBox x:Name="tbGitPath"
-                     Grid.Row="2"
-                     Grid.Column="1"
-                     Margin="10,14,10,14"
-                     TextWrapping="Wrap"
-                     Text="{Binding GitPath}"
-                     ToolTip="{DynamicResource giteasy_settings_git_path_textbox_placeholder}"
-                     VerticalAlignment="Center"
-                     FontSize="16"
-                     MinWidth="120"
-                     Height="25" />
-            <Button x:Name="btnBrowseGit"
-                    Grid.Row="2"
+                    MinWidth="120"
+                    Content="{DynamicResource giteasy_settings_open_repos_in}"
+                    Height="25"
+                    Margin="0,0,10,0" />
+                <ComboBox x:Name="cbOpenReposIn"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Width="120"
+                    SelectedIndex="{Binding SelectedOpenReposInIndex}"
+                    Margin="10,0,10,0"
+                    VerticalAlignment="Center" />
+                <!-- Git path -->
+                <Label x:Name="lblGitPath"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Content="{DynamicResource giteasy_settings_git_path}"
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    MinWidth="120"
+                    Height="25" />
+                <TextBox x:Name="tbGitPath"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="10,14,10,14"
+                    TextWrapping="Wrap"
+                    Text="{Binding GitPath}"
+                    ToolTip="{DynamicResource giteasy_settings_git_path_textbox_placeholder}"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    MinWidth="120"
+                    Height="25" />
+                <Button x:Name="btnBrowseGit"
+                    Grid.Row="1"
                     Grid.Column="2"
                     Content="..."
                     Margin="10,0,0,0"
@@ -94,6 +68,65 @@
                     FontSize="16"
                     MinWidth="60"
                     Click="OnBtnBrowseGitPathClick" />
-        </Grid>
+            </Grid>
+            <!-- Repositories Paths Settings -->
+            <StackPanel>
+                <Label Content="Repository Paths"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Margin="0,10,0,5" />
+                <ListBox x:Name="lbxReposPaths"
+                    Margin="0"
+                    ItemsSource="{Binding ReposPaths}"
+                    HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="3*" />
+                                    <ColumnDefinition Width="1.5*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                    Tag="{Binding}"
+                                    Click="OnBtnRemoveReposPathClick"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="9"
+                                    Width="25"
+                                    Height="25"
+                                    Content="✕" />
+                                <TextBox Grid.Column="1"
+                                    Margin="10,5,10,5"
+                                    TextWrapping="Wrap"
+                                    Text="{Binding Path=., Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ToolTip="{DynamicResource giteasy_settings_repositories_path_textbox_placeholder}"
+                                    VerticalAlignment="Center"
+                                    FontSize="16"
+                                    MinWidth="120"
+                                    Height="25" />
+                                <Button Grid.Column="2"
+                                    Content="..."
+                                    Tag="{Binding}"
+                                    Click="OnBtnBrowseReposPathClick"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="16"
+                                    MinWidth="60" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Content="Add"
+                        Click="OnBtnAddReposPathClick"
+                        Grid.Column="1" />
+                </Grid>
+            </StackPanel>
+        </StackPanel>
     </DockPanel>
 </UserControl>

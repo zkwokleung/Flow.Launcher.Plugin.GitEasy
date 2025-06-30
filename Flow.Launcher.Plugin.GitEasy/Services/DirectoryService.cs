@@ -23,19 +23,14 @@ public class DirectoryService : IDirectoryService
 
     public bool VerifyRepositoriesPath()
     {
-        string path = _settingsService.GetSettingsOrDefault().ReposPath;
+        List<string> paths = _settingsService.GetSettingsOrDefault().ReposPaths;
 
-        if (string.IsNullOrWhiteSpace(path))
+        if (paths == null || paths.Count == 0)
         {
             return false;
         }
 
-        if (!Directory.Exists(path))
-        {
-            return false;
-        }
-
-        return true;
+        return paths.Any(p => !string.IsNullOrWhiteSpace(p) && Directory.Exists(p));
     }
 
     public void CreateDirectory(string path)
@@ -51,5 +46,25 @@ public class DirectoryService : IDirectoryService
     public void CreateRepositoriesDirectory()
     {
         CreateDirectory(_settingsService.GetSettingsOrDefault().ReposPath);
+    }
+
+    public List<string> GetRepositoriesDirectories()
+    {
+        List<string> result = new();
+        foreach (string root in _settingsService.GetSettingsOrDefault().ReposPaths ?? new())
+        {
+            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
+            {
+                try
+                {
+                    result.AddRange(GetDirectories(root));
+                }
+                catch (Exception)
+                {
+                    // ignore invalid directories
+                }
+            }
+        }
+        return result;
     }
 }

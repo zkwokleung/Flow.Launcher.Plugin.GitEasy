@@ -35,8 +35,8 @@ public class OpenCommand : ICommand
 
     public List<Result> Resolve(string query, string actionKeyword)
     {
-        // Get a list of all directories under the project folder
-        List<string> dirs = _directoryService.GetDirectories(_settingsService.GetSettingsOrDefault().ReposPath);
+        // Get a list of all directories across all configured repository roots
+        List<string> dirs = _directoryService.GetRepositoriesDirectories();
 
         return dirs.Select(d =>
         {
