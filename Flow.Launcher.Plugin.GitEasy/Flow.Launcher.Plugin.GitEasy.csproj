@@ -60,8 +60,4 @@
     <PackageReference Include="Octokit" Version="13.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Images\" />
-  </ItemGroup>
-
 </Project>
