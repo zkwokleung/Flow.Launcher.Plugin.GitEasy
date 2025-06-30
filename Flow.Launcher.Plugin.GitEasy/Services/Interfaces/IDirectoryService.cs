@@ -8,4 +8,5 @@ public interface IDirectoryService
     bool VerifyRepositoriesPath();
     void CreateDirectory(string path);
     void CreateRepositoriesDirectory();
+    List<string> GetRepositoriesDirectories();
 }
