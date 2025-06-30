@@ -14,7 +14,10 @@ This started as a very personal project. You are very welcomed to contribute and
 ## Features
 
 * Clone repositories and open in File Explorer/VS Code
-* Open exisitng repositories under your project folder
+* Supports **multiple repository root folders** – keep personal, work, OSS projects separated
+* Clone command lets you pick which root folder to clone into (default is the first one)
+* Open / Fetch commands search across **all configured repository paths**
+* Open existing repositories under any configured folder
 * Search and open existing repositories with Fuzzy Search
 
 ## Usage
@@ -22,7 +25,7 @@ This started as a very personal project. You are very welcomed to contribute and
 | Command                    | Description                                | Example                                                                   |
 |----------------------------|--------------------------------------------|---------------------------------------------------------------------------|
 | `` ge ``                   | Show all commands                          |                                                                           |
-| `` ge clone <url> ``       | Clone a repository into the project folder | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git `` |
+| `` ge clone <url> ``       | Clone a repository. A separate result appears for each configured root folder so you can choose where to clone. | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git `` |
 | `` ge open <repo name> ``  | Open a repository in File Explorer/VS Code | `` ge open Flow.Launcher.Plugin.GitEasy ``                                |
 | `` ge fetch <repo name> `` | Fetch a repository                         | `` ge fetch Flow.Launcher.Plugin.GitEasy ``                               |
 
@@ -30,7 +33,7 @@ This started as a very personal project. You are very welcomed to contribute and
 
 | Setting            | Description                                                                                          |
 |--------------------|------------------------------------------------------------------------------------------------------|
-| Repositories Path  | The local project folder, containing all the repositories.                                           |
+| Repository Paths   | One or more local folders that contain your repositories. You can add / remove paths in the plugin's settings panel. The **first** path is treated as default when no explicit choice is made. |
 | Open Repository In | Specify what to do after cloning the repository. <br> Options: ``None``, ``VSCode``,``FileExplorer`` |
 | Git Path           | Specify the path to your git.exe (set to default installation directory)                             |
 
