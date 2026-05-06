@@ -24,12 +24,13 @@ public class GitCommandService : IGitCommandService
             throw new ArgumentException("Repo can not be null or empty");
         }
 
-        if (!File.Exists(_settingService.GetSettingsOrDefault().GitPath))
+        var gitPath = _settingService.GetSettingsOrDefault().GitPath;
+        if (!File.Exists(gitPath))
         {
             throw new Exception("git.exe not found");
         }
 
-        Process.Start(PrepareGitCloneProcessStartInfo(options)).WaitForExit();
+        Process.Start(PrepareGitCloneProcessStartInfo(options, gitPath)).WaitForExit();
 
         OnCompleted?.Invoke();
     }
@@ -41,14 +42,15 @@ public class GitCommandService : IGitCommandService
             throw new ArgumentException("Repo can not be null or empty");
         }
 
-        if (!File.Exists(_settingService.GetSettingsOrDefault().GitPath))
+        var gitPath = _settingService.GetSettingsOrDefault().GitPath;
+        if (!File.Exists(gitPath))
         {
             throw new Exception("git.exe not found");
         }
 
         Process p = new()
         {
-            StartInfo = PrepareGitFetchProcessStartInfo(options)
+            StartInfo = PrepareGitFetchProcessStartInfo(options, gitPath)
         };
         p.Start();
         p.WaitForExit();
@@ -58,11 +60,11 @@ public class GitCommandService : IGitCommandService
         });
     }
 
-    private static ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options)
+    private static ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options, string gitPath="git.exe")
     {
         ProcessStartInfo info = new()
         {
-            FileName = "git.exe",
+            FileName = gitPath,
             WorkingDirectory = options.DestinationFolder
         };
 
@@ -78,11 +80,11 @@ public class GitCommandService : IGitCommandService
         return info;
     }
 
-    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(GitFetchCommandOptions options)
+    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(GitFetchCommandOptions options, string gitPath = "git.exe")
     {
         ProcessStartInfo info = new()
         {
-            FileName = "git.exe",
+            FileName = gitPath,
             WorkingDirectory = options.RepoPath,
         };
 
