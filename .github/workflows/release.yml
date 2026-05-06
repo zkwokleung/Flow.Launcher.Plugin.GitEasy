@@ -4,10 +4,8 @@ permissions:
   contents: write
 
 on:
-  workflow_dispatch:
   push:
-    branches-ignore:
-      - "main"
+    branches: ["main"]
     paths-ignore:
       - "**/README.md"
 
@@ -42,3 +40,11 @@ jobs:
           cd Flow.Launcher.Plugin.GitEasy
           dotnet publish -c Release -r win-x64 --no-self-contained Flow.Launcher.Plugin.GitEasy.csproj
           7z a -tzip "Flow.Launcher.Plugin.GitEasy.zip" "./bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish/*"
+
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.zip"
+          tag_name: "v${{steps.version.outputs.prop}}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
