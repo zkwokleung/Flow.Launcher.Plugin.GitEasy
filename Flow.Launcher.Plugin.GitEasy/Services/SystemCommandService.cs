@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -26,6 +26,20 @@ public class SystemCommandService : ISystemCommandService
         {
             FileName = "cmd.exe",
             Arguments = $"/c code \"{path}\"",
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+
+        Process.Start(info).WaitForExit();
+
+        OnCompleted?.Invoke();
+    }
+
+    public void OpenCursor(string path = "", Action OnCompleted = null)
+    {
+        ProcessStartInfo info = new()
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/c cursor \"{path}\"",
             WindowStyle = ProcessWindowStyle.Hidden,
         };
 

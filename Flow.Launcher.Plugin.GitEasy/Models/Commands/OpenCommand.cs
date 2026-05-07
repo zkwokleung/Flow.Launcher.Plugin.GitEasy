@@ -57,6 +57,10 @@ public class OpenCommand : ICommand
                             _systemCommandService.OpenVsCode(d);
                             break;
 
+                        case OpenOption.Cursor:
+                            _systemCommandService.OpenCursor(d);
+                            break;
+
                         case OpenOption.FileExplorer:
                         case OpenOption.None:
                         default:

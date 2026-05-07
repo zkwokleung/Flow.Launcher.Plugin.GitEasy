@@ -7,6 +7,7 @@ public enum OpenOption
     None = 0,
     VSCode,
     FileExplorer,
+    Cursor,
 }
 
 public class Settings
