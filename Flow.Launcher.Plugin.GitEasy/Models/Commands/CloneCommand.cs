@@ -128,8 +128,8 @@ public class CloneCommand : ICommand
             // Clone and open in Cursor
             results.Add(new Result
             {
-                Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer)} (select) ({root})",
-                IcoPath = Icons.Explorer,
+                Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
+                IcoPath = Icons.Cursor,
                 Action = _ =>
                 {
                     ExecuteClone(firstRepos, options, root, location, OpenOption.Cursor);
