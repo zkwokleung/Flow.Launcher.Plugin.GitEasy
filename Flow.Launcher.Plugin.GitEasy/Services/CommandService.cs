@@ -58,15 +58,16 @@ public class CommandService : ICommandService
 
     private Result PrepareCommandAutoCompleteResult(string actionKeyword, ICommand command)
     {
+        var commandCompletion = (!string.IsNullOrEmpty(actionKeyword) ? actionKeyword + " " : string.Empty) + command.Key + " ";
         return new Result
         {
             Title = command.Title,
             SubTitle = command.Description,
             IcoPath = command.IconPath ?? Icons.Logo,
-            AutoCompleteText = $"{actionKeyword} {command.Key} ",
+            AutoCompleteText = commandCompletion,
             Action = _ =>
             {
-                _context.API.ChangeQuery($"{actionKeyword} {command.Key} ");
+                _context.API.ChangeQuery(commandCompletion);
                 return false;
             }
         };
