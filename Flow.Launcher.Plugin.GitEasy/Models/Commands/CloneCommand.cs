@@ -9,7 +9,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
 public class CloneCommand : ICommand
 {
-    public string Key => "clone";
+    public string Key => "Clone";
     public string Title => _context.API.GetTranslation(Translations.QueryResultClone);
     public string Description => _context.API.GetTranslation(Translations.QueryResultCloneDesc);
 

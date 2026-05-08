@@ -63,9 +63,10 @@ public class CommandService : ICommandService
             Title = command.Title,
             SubTitle = command.Description,
             IcoPath = command.IconPath ?? Icons.Logo,
+            AutoCompleteText = $"{actionKeyword} {command.Key} ",
             Action = _ =>
             {
-                _context.API.ChangeQuery($"{actionKeyword} {command.Key}");
+                _context.API.ChangeQuery($"{actionKeyword} {command.Key} ");
                 return false;
             }
         };

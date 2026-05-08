@@ -10,7 +10,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
 public class OpenCommand : ICommand
 {
-    public string Key => "open";
+    public string Key => "Open";
     public string Title => _context.API.GetTranslation(Translations.QueryResultOpen);
     public string Description => _context.API.GetTranslation(Translations.QueryResultOpenDesc);
     public string IconPath => Icons.Logo;
