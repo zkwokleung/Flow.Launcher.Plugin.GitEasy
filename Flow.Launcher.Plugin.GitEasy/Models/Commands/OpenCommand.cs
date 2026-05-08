@@ -48,7 +48,7 @@ public class OpenCommand : ICommand
                 SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultOpenMsg), repoName),
                 IcoPath = IconPath,
                 Score = score,
-                AutoCompleteText = $"{actionKeyword} {Key} {repoName}",
+                AutoCompleteText = !string.IsNullOrEmpty(actionKeyword) ? $"{actionKeyword} {Key} {repoName}" : $"{Key} {repoName}",
                 Action = _ =>
                 {
                     switch (_settingsService.GetSettingsOrDefault().OpenReposIn)
