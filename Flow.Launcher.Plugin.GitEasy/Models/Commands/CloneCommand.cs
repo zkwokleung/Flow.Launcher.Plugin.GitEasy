@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
 using System;
@@ -124,6 +124,18 @@ public class CloneCommand : ICommand
                     return true;
                 }
             });
+
+            // Clone and open in Cursor
+            results.Add(new Result
+            {
+                Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
+                IcoPath = Icons.Cursor,
+                Action = _ =>
+                {
+                    ExecuteClone(firstRepos, options, root, location, OpenOption.Cursor);
+                    return true;
+                }
+            });
         }
 
         return results;
@@ -149,6 +161,9 @@ public class CloneCommand : ICommand
                         break;
                     case OpenOption.VSCode:
                         _systemCommandService.OpenVsCode($"{rootPath}\\{location}");
+                        break;
+                    case OpenOption.Cursor:
+                        _systemCommandService.OpenCursor($"{rootPath}\\{location}");
                         break;
                     default:
                         break;
