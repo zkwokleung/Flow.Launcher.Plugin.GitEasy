@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.EventArgs;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.EventArgs;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using System;
@@ -86,6 +86,7 @@ public class GitCommandService : IGitCommandService
         {
             FileName = gitPath,
             WorkingDirectory = options.RepoPath,
+            CreateNoWindow = true
         };
 
         info.ArgumentList.Add("fetch");

@@ -4,8 +4,10 @@ permissions:
   contents: write
 
 on:
+  workflow_dispatch:
   push:
-    branches: ["main"]
+    branches-ignore:
+      - "main"
     paths-ignore:
       - "**/README.md"
 
@@ -21,15 +23,6 @@ jobs:
         with:
           dotnet-version: 7.0.x
 
-      - name: get version
-        id: version
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: "Flow.Launcher.Plugin.GitEasy/plugin.json"
-          prop_path: "Version"
-
-      - run: echo ${{steps.version.outputs.prop}}
-
       - name: Restore dependencies
         run: |
           cd Flow.Launcher.Plugin.GitEasy
@@ -39,12 +32,9 @@ jobs:
         run: |
           cd Flow.Launcher.Plugin.GitEasy
           dotnet publish -c Release -r win-x64 --no-self-contained Flow.Launcher.Plugin.GitEasy.csproj
-          7z a -tzip "Flow.Launcher.Plugin.GitEasy.zip" "./bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish/*"
-
-      - name: Publish
-        uses: softprops/action-gh-release@v1
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: "Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.zip"
-          tag_name: "v${{steps.version.outputs.prop}}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Flow.Launcher.Plugin.GitEasy
+          path: ./Flow.Launcher.Plugin.GitEasy/bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish

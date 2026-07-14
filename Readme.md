@@ -25,7 +25,7 @@ This started as a very personal project. You are very welcomed to contribute and
 | Command                    | Description                                | Example                                                                   |
 |----------------------------|--------------------------------------------|---------------------------------------------------------------------------|
 | `` ge ``                   | Show all commands                          |                                                                           |
-| `` ge clone <url> ``       | Clone a repository. A separate result appears for each configured root folder so you can choose where to clone. | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git `` |
+| `` ge clone <url> ``       | Clone a repository. A separate result appears for each configured root folder so you can choose where to clone. | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git ``<br>`` ge clone https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy `` |
 | `` ge open <repo name> ``  | Open a repository in File Explorer/VS Code | `` ge open Flow.Launcher.Plugin.GitEasy ``                                |
 | `` ge fetch <repo name> `` | Fetch a repository                         | `` ge fetch Flow.Launcher.Plugin.GitEasy ``                               |
 
