@@ -58,14 +58,16 @@ public class CommandService : ICommandService
 
     private Result PrepareCommandAutoCompleteResult(string actionKeyword, ICommand command)
     {
+        var commandCompletion = (!string.IsNullOrEmpty(actionKeyword) ? $"{actionKeyword} " : string.Empty) + $"{command.Key} ";
         return new Result
         {
             Title = command.Title,
             SubTitle = command.Description,
             IcoPath = command.IconPath ?? Icons.Logo,
+            AutoCompleteText = commandCompletion,
             Action = _ =>
             {
-                _context.API.ChangeQuery($"{actionKeyword} {command.Key}");
+                _context.API.ChangeQuery(commandCompletion);
                 return false;
             }
         };
@@ -76,7 +78,8 @@ public class CommandService : ICommandService
         return new Result
         {
             Title = _context.API.GetTranslation(Translations.ErrorInvalidCmd),
-            SubTitle = _context.API.GetTranslation(Translations.ErrorInvalidCmdMsg)
+            SubTitle = _context.API.GetTranslation(Translations.ErrorInvalidCmdMsg),
+            IcoPath = Icons.Error
         };
     }
     #endregion
