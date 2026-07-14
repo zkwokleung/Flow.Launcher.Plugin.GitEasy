@@ -172,9 +172,11 @@ public class CloneCommand : ICommand
 
     private string ExtractRepoName(string url)
     {
+        if (url.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
+            url = url.Substring(0, url.Length - 4);
+
         // Look for the last index of the last slash /
-        int start = url.LastIndexOf('/') + 1;
-        return url.Substring(start, url.Length - start - 4);
+        return url.Substring(url.LastIndexOf('/') + 1);
     }
     #endregion
 }
