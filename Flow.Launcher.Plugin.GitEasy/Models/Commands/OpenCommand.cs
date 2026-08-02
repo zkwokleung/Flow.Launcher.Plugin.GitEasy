@@ -10,7 +10,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
 public class OpenCommand : ICommand
 {
-    public string Key => "open";
+    public string Key => "Open";
     public string Title => _context.API.GetTranslation(Translations.QueryResultOpen);
     public string Description => _context.API.GetTranslation(Translations.QueryResultOpenDesc);
     public string IconPath => Icons.Logo;
@@ -48,7 +48,7 @@ public class OpenCommand : ICommand
                 SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultOpenMsg), repoName),
                 IcoPath = IconPath,
                 Score = score,
-                AutoCompleteText = $"{actionKeyword} {Key} {repoName}",
+                AutoCompleteText = !string.IsNullOrEmpty(actionKeyword) ? $"{actionKeyword} {Key} {repoName}" : $"{Key} {repoName}",
                 Action = _ =>
                 {
                     switch (_settingsService.GetSettingsOrDefault().OpenReposIn)

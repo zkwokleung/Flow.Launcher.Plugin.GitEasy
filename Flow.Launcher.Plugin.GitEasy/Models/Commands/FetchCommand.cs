@@ -10,7 +10,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
 public class FetchCommand : ICommand
 {
-    public string Key => "fetch";
+    public string Key => "Fetch";
     public string Title => _context.API.GetTranslation(Translations.QueryResultFetch);
     public string Description => _context.API.GetTranslation(Translations.QueryResultFetchDesc);
     public string IconPath => Icons.Logo;
