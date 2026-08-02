@@ -6,4 +6,5 @@ public interface ISystemCommandService
 {
     public void OpenExplorer(string path = "", Action OnCompleted = null);
     public void OpenVsCode(string path = "", Action OnCompleted = null);
+    public void OpenCursor(string path = "", Action OnCompleted = null);
 }

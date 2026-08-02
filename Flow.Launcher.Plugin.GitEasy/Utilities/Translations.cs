@@ -13,6 +13,7 @@ public static class Translations
     public const string QueryResultCloneNoRepos = "giteasy_query_result_clone_no_repos";
     public const string QueryResultCloneHint = "giteasy_query_result_clone_hint";
     public const string QueryResultCloneOpenVSCode = "giteasy_query_result_clone_open_vscode";
+    public const string QueryResultCloneOpenCursor = "giteasy_query_result_clone_open_cursor";
     public const string QueryResultCloneOpenExplorer = "giteasy_query_result_clone_open_explorer";
 
     public const string QueryResultOpen = "giteasy_query_result_open";
