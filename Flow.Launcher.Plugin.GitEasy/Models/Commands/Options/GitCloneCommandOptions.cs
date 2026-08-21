@@ -1,8 +1,11 @@
 ﻿namespace Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 
-public class GitCloneCommandOptions
+using System;
+using System.Collections.Generic;
+
+public sealed class GitCloneCommandOptions
 {
-    public string Options { get; set; }
-    public string Repo { get; set; }
-    public string DestinationFolder { get; set; }
+    public IReadOnlyList<string> Arguments { get; init; } = Array.Empty<string>();
+    public string Repo { get; init; } = string.Empty;
+    public string DestinationPath { get; init; } = string.Empty;
 }
