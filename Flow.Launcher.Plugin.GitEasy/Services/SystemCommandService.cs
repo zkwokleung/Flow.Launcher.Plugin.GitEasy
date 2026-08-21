@@ -1,66 +1,265 @@
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
+using System.Security;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public class SystemCommandService : ISystemCommandService
+public sealed class SystemCommandService : ISystemCommandService
 {
-    public void OpenExplorer(string path = "", Action OnCompleted = null)
+    private const string WslLegacyPrefix = @"\\wsl$\";
+    private const string WslLocalhostPrefix = @"\\wsl.localhost\";
+
+    private readonly IProcessRunner _processRunner;
+
+    public SystemCommandService(IProcessRunner processRunner)
     {
+        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
+    }
+
+    public void OpenExplorer(string path = "", Action onCompleted = null)
+    {
+        string directoryPath = GetExistingDirectoryPath(path);
         ProcessStartInfo info = new()
         {
             FileName = "explorer.exe",
-            Arguments = Path.GetFullPath(path)
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        info.ArgumentList.Add(directoryPath);
+
+        _processRunner.StartDetached(info);
+        onCompleted?.Invoke();
+    }
+
+    public void OpenVsCode(string path = "", Action onCompleted = null)
+    {
+        OpenEditor(path, "code", onCompleted);
+    }
+
+    public void OpenCursor(string path = "", Action onCompleted = null)
+    {
+        OpenEditor(path, "cursor", onCompleted);
+    }
+
+    private void OpenEditor(string path, string editorCommand, Action onCompleted)
+    {
+        string directoryPath = GetExistingDirectoryPath(path);
+        ProcessStartInfo info = TryGetWslPathParts(
+            directoryPath,
+            out string distribution,
+            out string linuxPath)
+            ? CreateWslEditorStartInfo(editorCommand, distribution, linuxPath)
+            : CreateWindowsEditorStartInfo(editorCommand, directoryPath);
+
+        _processRunner.StartDetached(info);
+        onCompleted?.Invoke();
+    }
+
+    private static ProcessStartInfo CreateWslEditorStartInfo(
+        string editorCommand,
+        string distribution,
+        string linuxPath)
+    {
+        ProcessStartInfo info = new()
+        {
+            FileName = "wsl.exe",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        info.ArgumentList.Add("--distribution");
+        info.ArgumentList.Add(distribution);
+        info.ArgumentList.Add("--");
+        info.ArgumentList.Add(editorCommand);
+        info.ArgumentList.Add(linuxPath);
+
+        return info;
+    }
+
+    private static ProcessStartInfo CreateWindowsEditorStartInfo(
+        string editorCommand,
+        string directoryPath)
+    {
+        ProcessStartInfo info = new()
+        {
+            FileName = ResolveWindowsEditorExecutable(editorCommand),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        info.ArgumentList.Add(directoryPath);
+
+        return info;
+    }
+
+    private static string ResolveWindowsEditorExecutable(string editorCommand)
+    {
+        (string executableName, string installationDirectory) = editorCommand switch
+        {
+            "code" => ("Code.exe", "Microsoft VS Code"),
+            "cursor" => ("Cursor.exe", "Cursor"),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(editorCommand),
+                editorCommand,
+                "Unsupported editor command."),
         };
 
-        Process.Start(info).WaitForExit();
+        var candidates = new List<string>();
+        var seenCandidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        OnCompleted?.Invoke();
-    }
-
-    public void OpenVsCode(string path = "", Action OnCompleted = null)
-    {
-        OpenEditor(path, "code", OnCompleted);
-    }
-
-    public void OpenCursor(string path = "", Action OnCompleted = null)
-    {
-        OpenEditor(path, "cursor", OnCompleted);
-    }
-
-    private static void OpenEditor(string path, string editorCommand, Action OnCompleted)
-    {
-        ProcessStartInfo info;
-
-        if (path.StartsWith(@"\\wsl.localhost\", StringComparison.OrdinalIgnoreCase))
+        void AddCandidate(string candidate)
         {
-            var withoutPrefix = path.Substring(@"\\wsl.localhost\".Length);
-            var parts = withoutPrefix.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
-            var distro = parts[0];
-            var linuxPath = "/" + string.Join('/', parts.Skip(1));
-
-            info = new ProcessStartInfo
+            try
             {
-                FileName = "wsl.exe",
-                Arguments = $"-d {distro} -- {editorCommand} \"{linuxPath}\"",
-                WindowStyle = ProcessWindowStyle.Hidden,
-            };
+                string fullPath = Path.GetFullPath(candidate);
+                if (seenCandidates.Add(fullPath))
+                {
+                    candidates.Add(fullPath);
+                }
+            }
+            catch (Exception exception) when (exception is ArgumentException
+                                              or NotSupportedException
+                                              or PathTooLongException)
+            {
+                // Ignore malformed PATH entries and continue with known install locations.
+            }
+        }
+
+        string pathValue = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        foreach (string entry in pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            string directoryPath = entry.Trim().Trim('"');
+            if (directoryPath.Length == 0)
+            {
+                continue;
+            }
+
+            DirectoryInfo directory;
+            try
+            {
+                directory = new DirectoryInfo(directoryPath);
+            }
+            catch (Exception exception) when (exception is ArgumentException
+                                              or NotSupportedException
+                                              or PathTooLongException)
+            {
+                continue;
+            }
+
+            AddCandidate(Path.Combine(directory.FullName, executableName));
+
+            bool hasCommandShim = File.Exists(Path.Combine(directory.FullName, editorCommand))
+                                  || File.Exists(Path.Combine(directory.FullName, $"{editorCommand}.cmd"))
+                                  || File.Exists(Path.Combine(directory.FullName, $"{editorCommand}.bat"));
+            if (!hasCommandShim)
+            {
+                continue;
+            }
+
+            directory = directory.Parent;
+            for (int depth = 0; directory != null && depth < 4; depth++)
+            {
+                AddCandidate(Path.Combine(directory.FullName, executableName));
+                directory = directory.Parent;
+            }
+        }
+
+        string appPathsSuffix = $@"Software\Microsoft\Windows\CurrentVersion\App Paths\{executableName}";
+        foreach (string root in new[] { "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE" })
+        {
+            try
+            {
+                if (Registry.GetValue($@"{root}\{appPathsSuffix}", string.Empty, null) is string registeredPath)
+                {
+                    AddCandidate(registeredPath.Trim().Trim('"'));
+                }
+            }
+            catch (Exception exception) when (exception is IOException
+                                              or SecurityException
+                                              or UnauthorizedAccessException)
+            {
+                // Registry lookup is optional; PATH and standard locations remain available.
+            }
+        }
+
+        string localPrograms = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Programs");
+        AddCandidate(Path.Combine(localPrograms, installationDirectory, executableName));
+        AddCandidate(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            installationDirectory,
+            executableName));
+        AddCandidate(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            installationDirectory,
+            executableName));
+
+        foreach (string candidate in candidates)
+        {
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new FileNotFoundException(
+            $"The {editorCommand} editor executable could not be found.",
+            executableName);
+    }
+
+    private static string GetExistingDirectoryPath(string path)
+    {
+        string candidate = string.IsNullOrWhiteSpace(path)
+            ? Environment.CurrentDirectory
+            : path;
+        string directoryPath = Path.GetFullPath(candidate);
+
+        if (!Directory.Exists(directoryPath))
+        {
+            throw new DirectoryNotFoundException($"Directory does not exist: {directoryPath}");
+        }
+
+        return Path.TrimEndingDirectorySeparator(directoryPath);
+    }
+
+    private static bool TryGetWslPathParts(
+        string path,
+        out string distribution,
+        out string linuxPath)
+    {
+        string prefix;
+        if (path.StartsWith(WslLegacyPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            prefix = WslLegacyPrefix;
+        }
+        else if (path.StartsWith(WslLocalhostPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            prefix = WslLocalhostPrefix;
         }
         else
         {
-            info = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c {editorCommand} \"{path}\"",
-                WindowStyle = ProcessWindowStyle.Hidden,
-            };
+            distribution = string.Empty;
+            linuxPath = string.Empty;
+            return false;
         }
 
-        Process.Start(info).WaitForExit();
+        string[] parts = path[prefix.Length..].Split(
+            new[] { '\\', '/' },
+            StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            throw new ArgumentException("A WSL path must include a distribution name.", nameof(path));
+        }
 
-        OnCompleted?.Invoke();
+        distribution = parts[0];
+        linuxPath = parts.Length == 1
+            ? "/"
+            : "/" + string.Join('/', parts, 1, parts.Length - 1);
+        return true;
     }
 }

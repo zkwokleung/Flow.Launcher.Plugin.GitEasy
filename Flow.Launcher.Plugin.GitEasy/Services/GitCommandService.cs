@@ -1,23 +1,26 @@
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.EventArgs;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
+using Flow.Launcher.Plugin.GitEasy.Models.Processes;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public class GitCommandService : IGitCommandService
+public sealed class GitCommandService : IGitCommandService
 {
+    private readonly ISettingsService _settingsService;
+    private readonly IProcessRunner _processRunner;
 
-    private readonly ISettingsService _settingService;
-
-    public GitCommandService(ISettingsService settingsService)
+    public GitCommandService(
+        ISettingsService settingsService,
+        IProcessRunner processRunner)
     {
-        _settingService = settingsService;
+        _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
     public GitCommandResult CloneRepos(GitCloneCommandOptions options)
@@ -58,39 +61,53 @@ public class GitCommandService : IGitCommandService
             throw new IOException($"Clone destination is not empty: {destinationPath}");
         }
 
-        string gitPath = _settingService.GetSettingsOrDefault().GitPath;
+        string gitPath = GetGitPath();
+        ProcessStartInfo startInfo = PrepareGitCloneProcessStartInfo(
+            options,
+            gitPath,
+            destinationPath,
+            destinationRoot);
+        ProcessExecutionResult result = _processRunner.Run(startInfo);
+
+        return new GitCommandResult(
+            result.ExitCode,
+            result.StandardOutput,
+            result.StandardError);
+    }
+
+    public void FetchRepos(
+        GitFetchCommandOptions options,
+        Action<GitFetchCompletedEventArgs> onCompleted = null)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (string.IsNullOrWhiteSpace(options.RepoPath))
+        {
+            throw new ArgumentException("Repository path cannot be empty.", nameof(options));
+        }
+
+        string gitPath = GetGitPath();
+        ProcessExecutionResult result = _processRunner.Run(
+            PrepareGitFetchProcessStartInfo(options, gitPath));
+
+        onCompleted?.Invoke(new GitFetchCompletedEventArgs
+        {
+            ExitCode = result.ExitCode,
+            Output = string.IsNullOrWhiteSpace(result.StandardError)
+                ? result.StandardOutput
+                : result.StandardError,
+        });
+    }
+
+    private string GetGitPath()
+    {
+        string gitPath = _settingsService.GetSettingsOrDefault().GitPath;
         if (!File.Exists(gitPath))
         {
             throw new FileNotFoundException("Git executable was not found.", gitPath);
         }
 
-        ProcessStartInfo startInfo = PrepareGitCloneProcessStartInfo(options, gitPath, destinationPath, destinationRoot);
-        return RunGitProcess(startInfo);
-    }
-
-    public void FetchRepos(GitFetchCommandOptions options, Action<GitFetchCompletedEventArgs> OnCompleted = null)
-    {
-        if (string.IsNullOrWhiteSpace(options.RepoPath))
-        {
-            throw new ArgumentException("Repo can not be null or empty");
-        }
-
-        var gitPath = _settingService.GetSettingsOrDefault().GitPath;
-        if (!File.Exists(gitPath))
-        {
-            throw new Exception("git.exe not found");
-        }
-
-        Process p = new()
-        {
-            StartInfo = PrepareGitFetchProcessStartInfo(options, gitPath)
-        };
-        p.Start();
-        p.WaitForExit();
-        OnCompleted?.Invoke(new()
-        {
-            ExitCode = p.ExitCode,
-        });
+        return gitPath;
     }
 
     private static ProcessStartInfo PrepareGitCloneProcessStartInfo(
@@ -106,7 +123,7 @@ public class GitCommandService : IGitCommandService
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
         };
 
         info.ArgumentList.Add("clone");
@@ -115,7 +132,9 @@ public class GitCommandService : IGitCommandService
         {
             if (string.IsNullOrWhiteSpace(argument) || argument == "--")
             {
-                throw new ArgumentException("Clone arguments cannot be empty or contain the end-of-options delimiter.", nameof(options));
+                throw new ArgumentException(
+                    "Clone arguments cannot be empty or contain the end-of-options delimiter.",
+                    nameof(options));
             }
 
             info.ArgumentList.Add(argument);
@@ -128,41 +147,22 @@ public class GitCommandService : IGitCommandService
         return info;
     }
 
-    private static GitCommandResult RunGitProcess(ProcessStartInfo startInfo)
-    {
-        using Process process = new()
-        {
-            StartInfo = startInfo
-        };
-
-        if (!process.Start())
-        {
-            throw new InvalidOperationException("Git process could not be started.");
-        }
-
-        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
-        Task<string> standardError = process.StandardError.ReadToEndAsync();
-
-        process.WaitForExit();
-
-        return new GitCommandResult(
-            process.ExitCode,
-            standardOutput.GetAwaiter().GetResult(),
-            standardError.GetAwaiter().GetResult());
-    }
-
-    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(GitFetchCommandOptions options, string gitPath = "git.exe")
+    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(
+        GitFetchCommandOptions options,
+        string gitPath)
     {
         ProcessStartInfo info = new()
         {
             FileName = gitPath,
             WorkingDirectory = options.RepoPath,
-            CreateNoWindow = true
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
         };
 
         info.ArgumentList.Add("fetch");
 
         return info;
     }
-
 }
