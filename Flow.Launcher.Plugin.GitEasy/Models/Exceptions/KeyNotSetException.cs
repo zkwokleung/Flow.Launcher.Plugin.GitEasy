@@ -2,7 +2,7 @@
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Exceptions;
 
-public class KeyNotSetException:Exception
+public class KeyNotSetException : Exception
 {
     public KeyNotSetException() { }
 }

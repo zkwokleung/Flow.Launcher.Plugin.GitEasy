@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Exceptions;
+using Flow.Launcher.Plugin.GitEasy.Models.Exceptions;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -7,13 +7,13 @@ using System.Linq;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public class DirectoryService : IDirectoryService
+public sealed class DirectoryService : IDirectoryService
 {
-    private ISettingsService _settingsService;
+    private readonly ISettingsService _settingsService;
 
     public DirectoryService(ISettingsService settingsService)
     {
-        _settingsService = settingsService;
+        _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
     }
 
     public List<string> GetDirectories(string path)
@@ -23,14 +23,9 @@ public class DirectoryService : IDirectoryService
 
     public bool VerifyRepositoriesPath()
     {
-        List<string> paths = _settingsService.GetSettingsOrDefault().ReposPaths;
-
-        if (paths == null || paths.Count == 0)
-        {
-            return false;
-        }
-
-        return paths.Any(p => !string.IsNullOrWhiteSpace(p) && Directory.Exists(p));
+        return _settingsService.GetSettingsOrDefault()
+            .ReposPaths
+            .Any(Directory.Exists);
     }
 
     public void CreateDirectory(string path)
@@ -45,26 +40,39 @@ public class DirectoryService : IDirectoryService
 
     public void CreateRepositoriesDirectory()
     {
-        CreateDirectory(_settingsService.GetSettingsOrDefault().ReposPath);
+        string repositoryPath = _settingsService.GetSettingsOrDefault()
+            .ReposPaths
+            .FirstOrDefault();
+
+        if (repositoryPath == null)
+        {
+            throw new InvalidPathException();
+        }
+
+        CreateDirectory(repositoryPath);
     }
 
     public List<string> GetRepositoriesDirectories()
     {
-        List<string> result = new();
-        foreach (string root in _settingsService.GetSettingsOrDefault().ReposPaths ?? new())
+        var result = new List<string>();
+
+        foreach (string root in _settingsService.GetSettingsOrDefault().ReposPaths)
         {
-            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
+            if (!Directory.Exists(root))
             {
-                try
-                {
-                    result.AddRange(GetDirectories(root));
-                }
-                catch (Exception)
-                {
-                    // ignore invalid directories
-                }
+                continue;
+            }
+
+            try
+            {
+                result.AddRange(GetDirectories(root));
+            }
+            catch (Exception)
+            {
+                // Root-level filesystem failures are isolated until repository search is redesigned.
             }
         }
+
         return result;
     }
 }
