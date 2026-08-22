@@ -34,11 +34,6 @@ public sealed class SettingsService : ISettingsService
         }
     }
 
-    public Settings GetDefault()
-    {
-        return new Settings();
-    }
-
     public Settings GetSettings()
     {
         return _settings;

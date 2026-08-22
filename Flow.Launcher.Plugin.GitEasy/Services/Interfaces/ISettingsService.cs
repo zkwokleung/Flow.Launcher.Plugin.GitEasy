@@ -6,6 +6,5 @@ public interface ISettingsService
 {
     Settings GetSettingsOrDefault();
     Settings GetSettings();
-    Settings GetDefault();
     void SaveSettings();
 }
