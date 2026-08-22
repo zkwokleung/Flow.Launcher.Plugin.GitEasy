@@ -1,43 +1,69 @@
-
 <div align="center">
-    <img src="https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy/blob/main/Flow.Launcher.Plugin.GitEasy/Images/icon.png?raw=true" alt="logo" width="75">
-    <h1>Git Easy <br> Easy access to repositories</h1>
-    <br>
+    <img src="https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy/blob/main/Flow.Launcher.Plugin.GitEasy/Images/icon.png?raw=true" alt="Git Easy logo" width="75">
+    <h1>Git Easy<br>Fast repository access from Flow Launcher</h1>
 </div>
 
-## Description
+Git Easy is a Windows plugin for [Flow Launcher](https://github.com/Flow-Launcher/Flow.Launcher) that clones, finds, opens, and fetches Git repositories without leaving the launcher.
 
-This is a plugin for the [Flow launcher](https://github.com/Flow-Launcher/Flow.Launcher), allows for quickly cloning repositories and open it, as well as opening existing repositories on command.
-
-This started as a very personal project. You are very welcomed to contribute and adding your own ideas.
+Requires Flow Launcher 2.0.0 or later and Windows 10 or later.
 
 ## Features
 
-* Clone repositories and open in File Explorer/VS Code
-* Supports **multiple repository root folders** – keep personal, work, OSS projects separated
-* Clone command lets you pick which root folder to clone into (default is the first one)
-* Open / Fetch commands search across **all configured repository paths**
-* Open existing repositories under any configured folder
-* Search and open existing repositories with Fuzzy Search
+- Clone HTTPS or SCP-style SSH repository URLs into any configured repository root.
+- Pass supported clone options without opening a terminal.
+- Search repositories across multiple roots with fuzzy matching.
+- Open repositories in File Explorer, Visual Studio Code, or Cursor.
+- Fetch an existing repository with one action.
+- Cancel stale searches cleanly while a new Flow query is being resolved.
+- Auto-discover Git for Windows, with a manual executable-path override.
 
 ## Usage
 
-| Command                    | Description                                | Example                                                                   |
-|----------------------------|--------------------------------------------|---------------------------------------------------------------------------|
-| `` ge ``                   | Show all commands                          |                                                                           |
-| `` ge clone <url> ``       | Clone a repository. A separate result appears for each configured root folder so you can choose where to clone. | `` ge clone git@github.com:zkwokleung/Flow.Launcher.Plugin.GitEasy.git ``<br>`` ge clone https://github.com/zkwokleung/Flow.Launcher.Plugin.GitEasy `` |
-| `` ge open <repo name> ``  | Open a repository in File Explorer/VS Code | `` ge open Flow.Launcher.Plugin.GitEasy ``                                |
-| `` ge fetch <repo name> `` | Fetch a repository                         | `` ge fetch Flow.Launcher.Plugin.GitEasy ``                               |
+| Command | Description | Example |
+| --- | --- | --- |
+| `ge` | Show available commands. | `ge` |
+| `ge clone <url> [options]` | Show clone actions for every configured repository root. | `ge clone -b develop https://github.com/owner/project.git` |
+| `ge open <name>` | Fuzzy-search and open a repository. | `ge open project` |
+| `ge fetch <name>` | Fuzzy-search and fetch a repository. | `ge fetch project` |
+
+Clone accepts HTTPS URLs such as `https://github.com/owner/project.git` and SCP-style SSH URLs such as `git@github.com:owner/project.git`.
+
+Supported clone options:
+
+| Option | Value | Purpose |
+| --- | --- | --- |
+| `-b`, `--branch` | Branch or tag name | Check out a specific branch or tag. |
+| `--depth` | Positive integer | Create a shallow clone. |
+| `--recurse-submodules` | None | Initialize submodules recursively. |
+| `--single-branch` | None | Clone only the selected branch's history. |
+
+Each repository root gets its own clone result, in the same order as the settings list. Additional results let you override the post-clone action with File Explorer, Visual Studio Code, or Cursor.
 
 ## Settings
 
-| Setting            | Description                                                                                          |
-|--------------------|------------------------------------------------------------------------------------------------------|
-| Repository Paths   | One or more local folders that contain your repositories. You can add / remove paths in the plugin's settings panel. The **first** path is treated as default when no explicit choice is made. |
-| Open Repository In | Specify what to do after cloning the repository. <br> Options: ``None``, ``VSCode``,``FileExplorer`` |
-| Git Path           | Specify the path to your git.exe (set to default installation directory)                             |
+| Setting | Description |
+| --- | --- |
+| Repository Paths | Ordered folders containing your repositories. Open and Fetch search every configured root; Clone shows an explicit action for each root. |
+| Open Repository In | Default application for Open and the default post-clone action: `None`, `FileExplorer`, `VSCode`, or `Cursor`. For Clone, `None` performs no post-clone open. For Open, `None` falls back to File Explorer. |
+| Git Path | Path to `git.exe`. Git Easy discovers Git from `PATH` and common Git for Windows locations; use this setting to override it. |
 
-## TODO
+## Development
 
-* Run other git commands, i.e., status
-* Search for repositories on GitHub
+Prerequisites:
+
+- Windows 10 or later
+- .NET 9 SDK
+- Git for Windows
+
+From the repository root:
+
+```powershell
+dotnet restore Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.csproj -r win-x64
+dotnet format Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.csproj whitespace --verify-no-changes --no-restore
+dotnet build Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.csproj -c Release --no-restore
+dotnet publish Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.csproj -c Release -r win-x64 --no-self-contained --no-restore
+```
+
+Pull requests and pushes to `main` or `develop` run formatting and publish verification. A release is created only from a `vMAJOR.MINOR.PATCH` tag that exactly matches the version in `plugin.json`.
+
+Contributions and focused feature proposals are welcome.

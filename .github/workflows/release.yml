@@ -1,50 +1,113 @@
-name: build
+name: release
 
 permissions:
   contents: write
 
 on:
   push:
-    branches: ["main"]
-    paths-ignore:
-      - "**/README.md"
+    tags:
+      - "v*.*.*"
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: Flow.Launcher.Plugin.GitEasy
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Configure release paths
+        run: |
+          "PUBLISH_PATH=$env:RUNNER_TEMP\giteasy-release\Flow.Launcher.Plugin.GitEasy" >> $env:GITHUB_ENV
+          "ARCHIVE_PATH=$env:RUNNER_TEMP\Flow.Launcher.Plugin.GitEasy.zip" >> $env:GITHUB_ENV
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 7.0.x
+          dotnet-version: 9.0.x
 
-      - name: get version
+      - name: Validate release version
         id: version
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: "Flow.Launcher.Plugin.GitEasy/plugin.json"
-          prop_path: "Version"
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $manifest = Get-Content -LiteralPath "plugin.json" -Raw | ConvertFrom-Json
 
-      - run: echo ${{steps.version.outputs.prop}}
+          if ($env:RELEASE_TAG -notmatch '^v(?<version>[0-9]+\.[0-9]+\.[0-9]+)$') {
+            throw "Release tag '$env:RELEASE_TAG' must use vMAJOR.MINOR.PATCH."
+          }
+
+          $tagVersion = $Matches.version
+          if (![string]::Equals($tagVersion, [string]$manifest.Version, [StringComparison]::Ordinal)) {
+            throw "Release tag '$env:RELEASE_TAG' does not match plugin version '$($manifest.Version)'."
+          }
+
+          "version=$tagVersion" >> $env:GITHUB_OUTPUT
 
       - name: Restore dependencies
-        run: |
-          cd Flow.Launcher.Plugin.GitEasy
-          dotnet restore
+        run: dotnet restore -r win-x64
 
-      - name: Build
-        run: |
-          cd Flow.Launcher.Plugin.GitEasy
-          dotnet publish -c Release -r win-x64 --no-self-contained Flow.Launcher.Plugin.GitEasy.csproj
-          7z a -tzip "Flow.Launcher.Plugin.GitEasy.zip" "./bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish/*"
+      - name: Verify formatting
+        run: dotnet format whitespace --verify-no-changes --no-restore
 
-      - name: Publish
-        uses: softprops/action-gh-release@v1
+      - name: Publish plugin
+        run: >-
+          dotnet publish
+          -c Release
+          -r win-x64
+          --no-self-contained
+          --no-restore
+          --output "$env:PUBLISH_PATH"
+
+      - name: Verify and package plugin
+        id: package
+        run: |
+          $requiredPaths = @(
+            "plugin.json",
+            "Flow.Launcher.Plugin.GitEasy.dll",
+            "Images",
+            "Languages"
+          )
+
+          foreach ($requiredPath in $requiredPaths) {
+            $publishedPath = Join-Path $env:PUBLISH_PATH $requiredPath
+            if (!(Test-Path -LiteralPath $publishedPath)) {
+              throw "Published plugin is missing '$requiredPath'."
+            }
+          }
+
+          $archiveItems = Get-ChildItem -LiteralPath $env:PUBLISH_PATH
+          Compress-Archive -LiteralPath $archiveItems.FullName -DestinationPath $env:ARCHIVE_PATH -CompressionLevel Optimal
+
+          if (!(Test-Path -LiteralPath $env:ARCHIVE_PATH)) {
+            throw "Plugin archive was not created."
+          }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [IO.Compression.ZipFile]::OpenRead($env:ARCHIVE_PATH)
+          try {
+            $archiveEntries = $archive.Entries.FullName
+            foreach ($rootEntry in @("plugin.json", "Flow.Launcher.Plugin.GitEasy.dll")) {
+              if ($archiveEntries -notcontains $rootEntry) {
+                throw "Plugin archive is missing root entry '$rootEntry'."
+              }
+            }
+          }
+          finally {
+            $archive.Dispose()
+          }
+
+          "archive_path=$env:ARCHIVE_PATH" >> $env:GITHUB_OUTPUT
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
         with:
-          files: "Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.zip"
-          tag_name: "v${{steps.version.outputs.prop}}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{ steps.package.outputs.archive_path }}
+          name: Git Easy ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
