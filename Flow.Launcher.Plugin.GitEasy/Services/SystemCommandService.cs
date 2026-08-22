@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
@@ -20,7 +21,22 @@ public sealed class SystemCommandService : ISystemCommandService
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
-    public void OpenExplorer(string path = "", Action onCompleted = null)
+    public Task OpenExplorerAsync(string path)
+    {
+        return Task.Run(() => OpenExplorer(path));
+    }
+
+    public Task OpenVsCodeAsync(string path)
+    {
+        return Task.Run(() => OpenEditor(path, "code"));
+    }
+
+    public Task OpenCursorAsync(string path)
+    {
+        return Task.Run(() => OpenEditor(path, "cursor"));
+    }
+
+    private void OpenExplorer(string path)
     {
         string directoryPath = GetExistingDirectoryPath(path);
         ProcessStartInfo info = new()
@@ -32,20 +48,9 @@ public sealed class SystemCommandService : ISystemCommandService
         info.ArgumentList.Add(directoryPath);
 
         _processRunner.StartDetached(info);
-        onCompleted?.Invoke();
     }
 
-    public void OpenVsCode(string path = "", Action onCompleted = null)
-    {
-        OpenEditor(path, "code", onCompleted);
-    }
-
-    public void OpenCursor(string path = "", Action onCompleted = null)
-    {
-        OpenEditor(path, "cursor", onCompleted);
-    }
-
-    private void OpenEditor(string path, string editorCommand, Action onCompleted)
+    private void OpenEditor(string path, string editorCommand)
     {
         string directoryPath = GetExistingDirectoryPath(path);
         ProcessStartInfo info = TryGetWslPathParts(
@@ -56,7 +61,6 @@ public sealed class SystemCommandService : ISystemCommandService
             : CreateWindowsEditorStartInfo(editorCommand, directoryPath);
 
         _processRunner.StartDetached(info);
-        onCompleted?.Invoke();
     }
 
     private static ProcessStartInfo CreateWslEditorStartInfo(
@@ -214,10 +218,12 @@ public sealed class SystemCommandService : ISystemCommandService
 
     private static string GetExistingDirectoryPath(string path)
     {
-        string candidate = string.IsNullOrWhiteSpace(path)
-            ? Environment.CurrentDirectory
-            : path;
-        string directoryPath = Path.GetFullPath(candidate);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Directory path cannot be empty.", nameof(path));
+        }
+
+        string directoryPath = Path.GetFullPath(path);
 
         if (!Directory.Exists(directoryPath))
         {

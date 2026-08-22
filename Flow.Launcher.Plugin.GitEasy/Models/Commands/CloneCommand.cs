@@ -6,11 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
 public class CloneCommand : ICommand
 {
+    private const int MaxDiagnosticLength = 1000;
+
     public string Key => "Clone";
     public string Title => _context.API.GetTranslation(Translations.QueryResultClone);
     public string Description => _context.API.GetTranslation(Translations.QueryResultCloneDesc);
@@ -102,9 +106,9 @@ public class CloneCommand : ICommand
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultClone)} {location} → {root}",
                 SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultCloneMsg), repository, root),
                 IcoPath = Icons.Logo,
-                Action = _ =>
+                AsyncAction = async _ =>
                 {
-                    ExecuteClone(repository, cloneArguments, destinationPath, location, defaultPostAction);
+                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, defaultPostAction);
                     return true;
                 }
             });
@@ -114,9 +118,9 @@ public class CloneCommand : ICommand
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer)} ({root})",
                 IcoPath = Icons.Explorer,
-                Action = _ =>
+                AsyncAction = async _ =>
                 {
-                    ExecuteClone(repository, cloneArguments, destinationPath, location, OpenOption.FileExplorer);
+                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, OpenOption.FileExplorer);
                     return true;
                 }
             });
@@ -126,9 +130,9 @@ public class CloneCommand : ICommand
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode)} ({root})",
                 IcoPath = Icons.VSCode,
-                Action = _ =>
+                AsyncAction = async _ =>
                 {
-                    ExecuteClone(repository, cloneArguments, destinationPath, location, OpenOption.VSCode);
+                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, OpenOption.VSCode);
                     return true;
                 }
             });
@@ -138,9 +142,9 @@ public class CloneCommand : ICommand
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
                 IcoPath = Icons.Cursor,
-                Action = _ =>
+                AsyncAction = async _ =>
                 {
-                    ExecuteClone(repository, cloneArguments, destinationPath, location, OpenOption.Cursor);
+                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, OpenOption.Cursor);
                     return true;
                 }
             });
@@ -149,7 +153,7 @@ public class CloneCommand : ICommand
         return results;
     }
 
-    private void ExecuteClone(
+    private async Task ExecuteCloneAsync(
         string repositoryUrl,
         IReadOnlyList<string> arguments,
         string destinationPath,
@@ -158,12 +162,14 @@ public class CloneCommand : ICommand
     {
         try
         {
-            GitCommandResult result = _gitCommandService.CloneRepos(new()
-            {
-                Arguments = arguments,
-                DestinationPath = destinationPath,
-                Repo = repositoryUrl
-            });
+            GitCommandResult result = await _gitCommandService.CloneRepositoryAsync(
+                new()
+                {
+                    Arguments = arguments,
+                    DestinationPath = destinationPath,
+                    Repo = repositoryUrl
+                },
+                CancellationToken.None);
 
             if (!result.Succeeded)
             {
@@ -172,13 +178,21 @@ public class CloneCommand : ICommand
             }
 
             ShowCloneCompleteMsg(location);
-            OpenRepository(destinationPath, postAction);
+            await OpenRepositoryAsync(destinationPath, postAction);
+        }
+        catch (TimeoutException)
+        {
+            _context.API.ShowMsgError(
+                _context.API.GetTranslation(Translations.Error),
+                string.Format(
+                    _context.API.GetTranslation(Translations.ErrorCloneTimeout),
+                    destinationPath));
         }
         catch (Exception ex)
         {
             _context.API.ShowMsgError(
                 _context.API.GetTranslation(Translations.Error),
-                ex.Message);
+                NormalizeDiagnostic(ex.Message));
         }
     }
 
@@ -194,15 +208,13 @@ public class CloneCommand : ICommand
         string details = string.IsNullOrWhiteSpace(result.StandardError)
             ? result.StandardOutput
             : result.StandardError;
-        details = details.Trim();
+        details = NormalizeDiagnostic(details);
 
         if (string.IsNullOrWhiteSpace(details))
         {
-            details = $"Git exited with code {result.ExitCode}.";
-        }
-        else if (details.Length > 1000)
-        {
-            details = $"…{details[^1000..]}";
+            details = string.Format(
+                _context.API.GetTranslation(Translations.ErrorGitExitCode),
+                result.ExitCode);
         }
 
         _context.API.ShowMsgError(
@@ -210,20 +222,52 @@ public class CloneCommand : ICommand
             details);
     }
 
-    private void OpenRepository(string destinationPath, OpenOption postAction)
+    private async Task OpenRepositoryAsync(string destinationPath, OpenOption postAction)
     {
-        switch (postAction)
+        try
         {
-            case OpenOption.FileExplorer:
-                _systemCommandService.OpenExplorer(destinationPath);
-                break;
-            case OpenOption.VSCode:
-                _systemCommandService.OpenVsCode(destinationPath);
-                break;
-            case OpenOption.Cursor:
-                _systemCommandService.OpenCursor(destinationPath);
-                break;
+            switch (postAction)
+            {
+                case OpenOption.FileExplorer:
+                    await _systemCommandService.OpenExplorerAsync(destinationPath);
+                    break;
+                case OpenOption.VSCode:
+                    await _systemCommandService.OpenVsCodeAsync(destinationPath);
+                    break;
+                case OpenOption.Cursor:
+                    await _systemCommandService.OpenCursorAsync(destinationPath);
+                    break;
+            }
         }
+        catch (Exception exception)
+        {
+            ShowOpenRepositoryError(destinationPath, exception);
+        }
+    }
+
+    private void ShowOpenRepositoryError(string destinationPath, Exception exception)
+    {
+        string message = string.Format(
+            _context.API.GetTranslation(Translations.ErrorOpenRepository),
+            destinationPath);
+        string details = NormalizeDiagnostic(exception.Message);
+
+        if (!string.IsNullOrWhiteSpace(details))
+        {
+            message += $"{Environment.NewLine}{details}";
+        }
+
+        _context.API.ShowMsgError(
+            _context.API.GetTranslation(Translations.Error),
+            message);
+    }
+
+    private static string NormalizeDiagnostic(string details)
+    {
+        details = details.Trim();
+        return details.Length > MaxDiagnosticLength
+            ? $"…{details[^(MaxDiagnosticLength - 1)..]}"
+            : details;
     }
 
     private List<Result> GetInvalidCloneResults()

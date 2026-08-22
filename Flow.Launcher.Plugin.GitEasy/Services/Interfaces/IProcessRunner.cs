@@ -7,10 +7,6 @@ namespace Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 
 public interface IProcessRunner
 {
-    ProcessExecutionResult Run(
-        ProcessStartInfo startInfo,
-        CancellationToken cancellationToken = default);
-
     Task<ProcessExecutionResult> RunAsync(
         ProcessStartInfo startInfo,
         CancellationToken cancellationToken = default);

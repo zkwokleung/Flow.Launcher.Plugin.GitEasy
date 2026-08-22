@@ -1,10 +1,10 @@
-﻿using System;
+﻿using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 
 public interface ISystemCommandService
 {
-    public void OpenExplorer(string path = "", Action OnCompleted = null);
-    public void OpenVsCode(string path = "", Action OnCompleted = null);
-    public void OpenCursor(string path = "", Action OnCompleted = null);
+    Task OpenExplorerAsync(string path);
+    Task OpenVsCodeAsync(string path);
+    Task OpenCursorAsync(string path);
 }

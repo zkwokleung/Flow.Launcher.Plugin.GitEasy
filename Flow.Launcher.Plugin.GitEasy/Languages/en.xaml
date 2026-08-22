@@ -67,4 +67,8 @@
     <system:String x:Key="giteasy_error_invalid_repos_path">Invalid repositories path. Please specify it in the plugin setting.</system:String>
 
     <system:String x:Key="giteasy_error_fetch_msg">Error fetching {0}</system:String>
+    <system:String x:Key="giteasy_error_clone_timeout">Cloning timed out. A partial folder may remain at {0}.</system:String>
+    <system:String x:Key="giteasy_error_fetch_timeout">Fetching {0} timed out.</system:String>
+    <system:String x:Key="giteasy_error_git_exit_code">Git exited with code {0}.</system:String>
+    <system:String x:Key="giteasy_error_open_repository">Failed to open the repository at {0}.</system:String>
 </ResourceDictionary>

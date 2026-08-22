@@ -1,5 +1,4 @@
-using Flow.Launcher.Plugin.GitEasy.Models.Commands.EventArgs;
-using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
 using Flow.Launcher.Plugin.GitEasy.Models.Processes;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
@@ -7,11 +6,16 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public sealed class GitCommandService : IGitCommandService
 {
+    private static readonly TimeSpan CloneTimeout = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan FetchTimeout = TimeSpan.FromMinutes(10);
+
     private readonly ISettingsService _settingsService;
     private readonly IProcessRunner _processRunner;
 
@@ -23,7 +27,78 @@ public sealed class GitCommandService : IGitCommandService
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
-    public GitCommandResult CloneRepos(GitCloneCommandOptions options)
+    public async Task<GitCommandResult> CloneRepositoryAsync(
+        GitCloneCommandOptions options,
+        CancellationToken cancellationToken)
+    {
+        ProcessStartInfo startInfo = CreateGitCloneProcessStartInfo(options);
+
+        using CancellationTokenSource timeoutCancellationTokenSource = new(CloneTimeout);
+        using CancellationTokenSource linkedCancellationTokenSource =
+            CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                timeoutCancellationTokenSource.Token);
+
+        try
+        {
+            ProcessExecutionResult result = await _processRunner
+                .RunAsync(startInfo, linkedCancellationTokenSource.Token)
+                .ConfigureAwait(false);
+            return ToGitCommandResult(result);
+        }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            RethrowCallerCancellation(exception, cancellationToken);
+            throw;
+        }
+        catch (OperationCanceledException exception) when (timeoutCancellationTokenSource.IsCancellationRequested)
+        {
+            throw new TimeoutException("Git clone timed out.", exception);
+        }
+    }
+
+    public async Task<GitCommandResult> FetchRepositoryAsync(
+        GitFetchCommandOptions options,
+        CancellationToken cancellationToken)
+    {
+        ProcessStartInfo startInfo = CreateGitFetchProcessStartInfo(options);
+
+        using CancellationTokenSource timeoutCancellationTokenSource = new(FetchTimeout);
+        using CancellationTokenSource linkedCancellationTokenSource =
+            CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                timeoutCancellationTokenSource.Token);
+
+        try
+        {
+            ProcessExecutionResult result = await _processRunner
+                .RunAsync(startInfo, linkedCancellationTokenSource.Token)
+                .ConfigureAwait(false);
+            return ToGitCommandResult(result);
+        }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            RethrowCallerCancellation(exception, cancellationToken);
+            throw;
+        }
+        catch (OperationCanceledException exception) when (timeoutCancellationTokenSource.IsCancellationRequested)
+        {
+            throw new TimeoutException("Git fetch timed out.", exception);
+        }
+    }
+
+    private string GetGitPath()
+    {
+        string gitPath = _settingsService.GetSettingsOrDefault().GitPath;
+        if (!File.Exists(gitPath))
+        {
+            throw new FileNotFoundException("Git executable was not found.", gitPath);
+        }
+
+        return gitPath;
+    }
+
+    private ProcessStartInfo CreateGitCloneProcessStartInfo(GitCloneCommandOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -61,23 +136,14 @@ public sealed class GitCommandService : IGitCommandService
             throw new IOException($"Clone destination is not empty: {destinationPath}");
         }
 
-        string gitPath = GetGitPath();
-        ProcessStartInfo startInfo = PrepareGitCloneProcessStartInfo(
+        return PrepareGitCloneProcessStartInfo(
             options,
-            gitPath,
+            GetGitPath(),
             destinationPath,
             destinationRoot);
-        ProcessExecutionResult result = _processRunner.Run(startInfo);
-
-        return new GitCommandResult(
-            result.ExitCode,
-            result.StandardOutput,
-            result.StandardError);
     }
 
-    public void FetchRepos(
-        GitFetchCommandOptions options,
-        Action<GitFetchCompletedEventArgs> onCompleted = null)
+    private ProcessStartInfo CreateGitFetchProcessStartInfo(GitFetchCommandOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -86,28 +152,7 @@ public sealed class GitCommandService : IGitCommandService
             throw new ArgumentException("Repository path cannot be empty.", nameof(options));
         }
 
-        string gitPath = GetGitPath();
-        ProcessExecutionResult result = _processRunner.Run(
-            PrepareGitFetchProcessStartInfo(options, gitPath));
-
-        onCompleted?.Invoke(new GitFetchCompletedEventArgs
-        {
-            ExitCode = result.ExitCode,
-            Output = string.IsNullOrWhiteSpace(result.StandardError)
-                ? result.StandardOutput
-                : result.StandardError,
-        });
-    }
-
-    private string GetGitPath()
-    {
-        string gitPath = _settingsService.GetSettingsOrDefault().GitPath;
-        if (!File.Exists(gitPath))
-        {
-            throw new FileNotFoundException("Git executable was not found.", gitPath);
-        }
-
-        return gitPath;
+        return PrepareGitFetchProcessStartInfo(options, GetGitPath());
     }
 
     private static ProcessStartInfo PrepareGitCloneProcessStartInfo(
@@ -143,6 +188,7 @@ public sealed class GitCommandService : IGitCommandService
         info.ArgumentList.Add("--");
         info.ArgumentList.Add(options.Repo);
         info.ArgumentList.Add(destinationPath);
+        info.Environment["GIT_TERMINAL_PROMPT"] = "0";
 
         return info;
     }
@@ -162,7 +208,26 @@ public sealed class GitCommandService : IGitCommandService
         };
 
         info.ArgumentList.Add("fetch");
+        info.Environment["GIT_TERMINAL_PROMPT"] = "0";
 
         return info;
+    }
+
+    private static GitCommandResult ToGitCommandResult(ProcessExecutionResult result)
+    {
+        return new GitCommandResult(
+            result.ExitCode,
+            result.StandardOutput,
+            result.StandardError);
+    }
+
+    private static void RethrowCallerCancellation(
+        OperationCanceledException exception,
+        CancellationToken cancellationToken)
+    {
+        if (exception.CancellationToken != cancellationToken)
+        {
+            throw new OperationCanceledException(exception.Message, exception, cancellationToken);
+        }
     }
 }

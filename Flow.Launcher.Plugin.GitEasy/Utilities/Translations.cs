@@ -51,4 +51,8 @@ public static class Translations
     public const string ErrorInvalidCmdMsg = "giteasy_error_invalid_cmd_msg";
     public const string ErrorInvalidReposPath = "giteasy_error_invalid_repos_path";
     public const string ErrorFetchMsg = "giteasy_error_fetch_msg";
+    public const string ErrorCloneTimeout = "giteasy_error_clone_timeout";
+    public const string ErrorFetchTimeout = "giteasy_error_fetch_timeout";
+    public const string ErrorGitExitCode = "giteasy_error_git_exit_code";
+    public const string ErrorOpenRepository = "giteasy_error_open_repository";
 }

@@ -13,16 +13,6 @@ namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public sealed class ProcessRunner : IProcessRunner
 {
-    public ProcessExecutionResult Run(
-        ProcessStartInfo startInfo,
-        CancellationToken cancellationToken = default)
-    {
-        return RunAsync(startInfo, cancellationToken)
-            .ConfigureAwait(false)
-            .GetAwaiter()
-            .GetResult();
-    }
-
     public async Task<ProcessExecutionResult> RunAsync(
         ProcessStartInfo startInfo,
         CancellationToken cancellationToken = default)
