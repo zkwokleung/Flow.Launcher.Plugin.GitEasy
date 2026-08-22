@@ -1,4 +1,4 @@
-﻿namespace Flow.Launcher.Plugin.GitEasy.Utilities;
+namespace Flow.Launcher.Plugin.GitEasy.Utilities;
 
 public static class Translations
 {
@@ -26,7 +26,7 @@ public static class Translations
 
     // Message
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
-    public const string QueryClonseCompleteMsg = "giteasy_query_clone_complete_msg";
+    public const string QueryCloneCompleteMsg = "giteasy_query_clone_complete_msg";
 
     public const string QueryFetchComplete = "giteasy_query_fetch_complete";
     public const string QueryFetchCompleteMsg = "giteasy_query_fetch_complete_msg";
@@ -34,14 +34,6 @@ public static class Translations
     public const string QueryOpenSettings = "giteasy_query_open_settings";
     public const string QueryCreateFolder = "giteasy_query_create_folder";
     public const string MsgFolderCreated = "giteasy_msg_folder_created";
-
-    // Program setting
-    public const string SrttingsReposPath = "giteasy_settings_repositories_path";
-    public const string SettingsReposPathDesc = "giteasy_settings_repositories_path_description";
-    public const string SettingsGitPath = "giteasy_settings_git_path";
-    public const string SettingsGitPathDesc = "giteasy_settings_git_path_description";
-    public const string SettingsBrowse = "giteasy_settings_browse";
-    public const string SettingsOpenReposIn = "giteasy_settings_open_repos_in";
 
     // Errors
     public const string Error = "giteasy_error";

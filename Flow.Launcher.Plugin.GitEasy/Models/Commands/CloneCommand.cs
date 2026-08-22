@@ -48,7 +48,6 @@ public class CloneCommand : ICommand
 
         if (string.IsNullOrWhiteSpace(query))
         {
-            // Display a hint result
             return CompleteResolution(new()
             {
                 new Result
@@ -104,8 +103,6 @@ public class CloneCommand : ICommand
         {
             cancellationToken.ThrowIfCancellationRequested();
             string destinationPath = Path.Combine(root, location);
-
-            // Default clone (follow OpenReposIn setting)
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultClone)} {location} → {root}",
@@ -117,8 +114,6 @@ public class CloneCommand : ICommand
                     return true;
                 }
             });
-
-            // Clone and open Explorer
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer)} ({root})",
@@ -129,8 +124,6 @@ public class CloneCommand : ICommand
                     return true;
                 }
             });
-
-            // Clone and open VSCode
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode)} ({root})",
@@ -141,8 +134,6 @@ public class CloneCommand : ICommand
                     return true;
                 }
             });
-
-            // Clone and open in Cursor
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
@@ -213,7 +204,7 @@ public class CloneCommand : ICommand
     {
         _context.API.ShowMsg(
             _context.API.GetTranslation(Translations.QueryCloneComplete),
-            $"{_context.API.GetTranslation(Translations.QueryClonseCompleteMsg)} {location}");
+            $"{_context.API.GetTranslation(Translations.QueryCloneCompleteMsg)} {location}");
     }
 
     private void ShowCloneError(GitCommandResult result)
