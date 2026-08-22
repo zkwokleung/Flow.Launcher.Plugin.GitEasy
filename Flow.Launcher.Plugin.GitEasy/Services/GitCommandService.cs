@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
 using Flow.Launcher.Plugin.GitEasy.Models.Processes;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
@@ -32,38 +32,32 @@ public sealed class GitCommandService : IGitCommandService
         CancellationToken cancellationToken)
     {
         ProcessStartInfo startInfo = CreateGitCloneProcessStartInfo(options);
-
-        using CancellationTokenSource timeoutCancellationTokenSource = new(CloneTimeout);
-        using CancellationTokenSource linkedCancellationTokenSource =
-            CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken,
-                timeoutCancellationTokenSource.Token);
-
-        try
-        {
-            ProcessExecutionResult result = await _processRunner
-                .RunAsync(startInfo, linkedCancellationTokenSource.Token)
-                .ConfigureAwait(false);
-            return ToGitCommandResult(result);
-        }
-        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
-        {
-            RethrowCallerCancellation(exception, cancellationToken);
-            throw;
-        }
-        catch (OperationCanceledException exception) when (timeoutCancellationTokenSource.IsCancellationRequested)
-        {
-            throw new TimeoutException("Git clone timed out.", exception);
-        }
+        return await RunGitCommandAsync(
+            startInfo,
+            CloneTimeout,
+            "Git clone timed out.",
+            cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<GitCommandResult> FetchRepositoryAsync(
-        GitFetchCommandOptions options,
+        string repositoryPath,
         CancellationToken cancellationToken)
     {
-        ProcessStartInfo startInfo = CreateGitFetchProcessStartInfo(options);
+        ProcessStartInfo startInfo = CreateGitFetchProcessStartInfo(repositoryPath);
+        return await RunGitCommandAsync(
+            startInfo,
+            FetchTimeout,
+            "Git fetch timed out.",
+            cancellationToken).ConfigureAwait(false);
+    }
 
-        using CancellationTokenSource timeoutCancellationTokenSource = new(FetchTimeout);
+    private async Task<GitCommandResult> RunGitCommandAsync(
+        ProcessStartInfo startInfo,
+        TimeSpan timeout,
+        string timeoutMessage,
+        CancellationToken cancellationToken)
+    {
+        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout);
         using CancellationTokenSource linkedCancellationTokenSource =
             CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken,
@@ -83,13 +77,13 @@ public sealed class GitCommandService : IGitCommandService
         }
         catch (OperationCanceledException exception) when (timeoutCancellationTokenSource.IsCancellationRequested)
         {
-            throw new TimeoutException("Git fetch timed out.", exception);
+            throw new TimeoutException(timeoutMessage, exception);
         }
     }
 
     private string GetGitPath()
     {
-        string gitPath = _settingsService.GetSettingsOrDefault().GitPath;
+        string gitPath = _settingsService.GetSettings().GitPath;
         if (!File.Exists(gitPath))
         {
             throw new FileNotFoundException("Git executable was not found.", gitPath);
@@ -143,16 +137,14 @@ public sealed class GitCommandService : IGitCommandService
             destinationRoot);
     }
 
-    private ProcessStartInfo CreateGitFetchProcessStartInfo(GitFetchCommandOptions options)
+    private ProcessStartInfo CreateGitFetchProcessStartInfo(string repositoryPath)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
-        if (string.IsNullOrWhiteSpace(options.RepoPath))
+        if (string.IsNullOrWhiteSpace(repositoryPath))
         {
-            throw new ArgumentException("Repository path cannot be empty.", nameof(options));
+            throw new ArgumentException("Repository path cannot be empty.", nameof(repositoryPath));
         }
 
-        return PrepareGitFetchProcessStartInfo(options, GetGitPath());
+        return PrepareGitFetchProcessStartInfo(repositoryPath, GetGitPath());
     }
 
     private static ProcessStartInfo PrepareGitCloneProcessStartInfo(
@@ -194,13 +186,13 @@ public sealed class GitCommandService : IGitCommandService
     }
 
     private static ProcessStartInfo PrepareGitFetchProcessStartInfo(
-        GitFetchCommandOptions options,
+        string repositoryPath,
         string gitPath)
     {
         ProcessStartInfo info = new()
         {
             FileName = gitPath,
-            WorkingDirectory = options.RepoPath,
+            WorkingDirectory = repositoryPath,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,

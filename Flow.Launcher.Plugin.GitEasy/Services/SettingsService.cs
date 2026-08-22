@@ -39,11 +39,6 @@ public sealed class SettingsService : ISettingsService
         return _settings;
     }
 
-    public Settings GetSettingsOrDefault()
-    {
-        return _settings;
-    }
-
     public void SaveSettings()
     {
         NormalizeSettings(discoverGit: false);

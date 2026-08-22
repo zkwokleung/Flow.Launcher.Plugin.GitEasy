@@ -1,26 +1,18 @@
-using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
-using FuzzySharp;
 using System;
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
-public class OpenCommand : ICommand
+public class OpenCommand : RepositoryCommandBase
 {
-    private const int MaxDiagnosticLength = 1000;
+    public override string Key => "Open";
+    public override string Title => Context.API.GetTranslation(Translations.QueryResultOpen);
+    public override string Description => Context.API.GetTranslation(Translations.QueryResultOpenDesc);
+    public override string IconPath => Icons.Logo;
 
-    public string Key => "Open";
-    public string Title => _context.API.GetTranslation(Translations.QueryResultOpen);
-    public string Description => _context.API.GetTranslation(Translations.QueryResultOpenDesc);
-    public string IconPath => Icons.Logo;
-
-    private readonly PluginInitContext _context;
     private readonly ISettingsService _settingsService;
-    private readonly IDirectoryService _directoryService;
     private readonly ISystemCommandService _systemCommandService;
 
     public OpenCommand(
@@ -28,51 +20,18 @@ public class OpenCommand : ICommand
         ISettingsService settingsService,
         IDirectoryService directoryService,
         ISystemCommandService systemCommandService)
+        : base(context, directoryService)
     {
-        _context = context;
         _settingsService = settingsService;
-        _directoryService = directoryService;
         _systemCommandService = systemCommandService;
     }
 
-    public async Task<List<Result>> ResolveAsync(
-        string query,
-        string actionKeyword,
-        CancellationToken cancellationToken)
+    protected override string ResultMessageTranslationKey => Translations.QueryResultOpenMsg;
+
+    protected override Func<string, string, Task> CreateRepositoryAction()
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        OpenOption openOption = _settingsService.GetSettingsOrDefault().OpenReposIn;
-        IReadOnlyList<string> directories = await _directoryService
-            .GetRepositoriesDirectoriesAsync(cancellationToken);
-        var results = new List<Result>(directories.Count);
-
-        foreach (string directory in directories)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            string repositoryName = DirectoryUtils.ExtractRepositoryNameFromDirectory(directory);
-            int score = Fuzz.Ratio(directory, query);
-
-            results.Add(new Result
-            {
-                Title = repositoryName,
-                SubTitle = string.Format(
-                    _context.API.GetTranslation(Translations.QueryResultOpenMsg),
-                    repositoryName),
-                IcoPath = IconPath,
-                Score = score,
-                AutoCompleteText = !string.IsNullOrEmpty(actionKeyword)
-                    ? $"{actionKeyword} {Key} {repositoryName}"
-                    : $"{Key} {repositoryName}",
-                AsyncAction = async _ =>
-                {
-                    await OpenRepositoryAsync(directory, openOption);
-                    return true;
-                }
-            });
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return results;
+        OpenOption openOption = _settingsService.GetSettings().OpenReposIn;
+        return (repositoryPath, _) => OpenRepositoryAsync(repositoryPath, openOption);
     }
 
     private async Task OpenRepositoryAsync(string repositoryPath, OpenOption openOption)
@@ -104,26 +63,14 @@ public class OpenCommand : ICommand
 
     private void ShowOpenRepositoryError(string repositoryPath, Exception exception)
     {
-        string message = string.Format(
-            _context.API.GetTranslation(Translations.ErrorOpenRepository),
-            repositoryPath);
-        string details = NormalizeDiagnostic(exception.Message);
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                Context.API.GetTranslation(Translations.ErrorOpenRepository),
+                repositoryPath),
+            exception.Message);
 
-        if (!string.IsNullOrWhiteSpace(details))
-        {
-            message += $"{Environment.NewLine}{details}";
-        }
-
-        _context.API.ShowMsgError(
-            _context.API.GetTranslation(Translations.Error),
+        Context.API.ShowMsgError(
+            Context.API.GetTranslation(Translations.Error),
             message);
-    }
-
-    private static string NormalizeDiagnostic(string details)
-    {
-        details = details.Trim();
-        return details.Length > MaxDiagnosticLength
-            ? $"…{details[^(MaxDiagnosticLength - 1)..]}"
-            : details;
     }
 }

@@ -5,7 +5,6 @@ using Flow.Launcher.Plugin.GitEasy.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,8 +12,6 @@ namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
 public class CloneCommand : ICommand
 {
-    private const int MaxDiagnosticLength = 1000;
-
     public string Key => "Clone";
     public string Title => _context.API.GetTranslation(Translations.QueryResultClone);
     public string Description => _context.API.GetTranslation(Translations.QueryResultCloneDesc);
@@ -46,52 +43,47 @@ public class CloneCommand : ICommand
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrWhiteSpace(query))
+        CloneQueryResult parsedQuery = CloneQueryParser.Parse(query);
+
+        switch (parsedQuery.Status)
         {
-            return CompleteResolution(new()
-            {
-                new Result
+            case CloneQueryStatus.Hint:
+                return CompleteResolution(new()
                 {
-                    Title = _context.API.GetTranslation(Translations.QueryResultCloneHint),
-                    IcoPath = Icons.Logo,
-                    Action = _ => true,
-                }
-            }, cancellationToken);
-        }
+                    new Result
+                    {
+                        Title = _context.API.GetTranslation(Translations.QueryResultCloneHint),
+                        IcoPath = Icons.Logo,
+                        Action = _ => true,
+                    }
+                }, cancellationToken);
 
-        List<string> terms = query
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-        List<string> repositories = terms.Where(term => TryExtractRepositoryName(term, out _)).ToList();
-
-        if (repositories.Count == 0)
-        {
-            return CompleteResolution(new()
-            {
-                new Result
+            case CloneQueryStatus.NoRepository:
+                return CompleteResolution(new()
                 {
-                    Title = _context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
-                    IcoPath = Icons.Logo,
-                    Action = _ => true
-                }
-            }, cancellationToken);
+                    new Result
+                    {
+                        Title = _context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
+                        IcoPath = Icons.Logo,
+                        Action = _ => true
+                    }
+                }, cancellationToken);
+
+            case CloneQueryStatus.Invalid:
+                return CompleteResolution(GetInvalidCloneResults(), cancellationToken);
+
+            case CloneQueryStatus.Valid:
+                break;
+
+            default:
+                throw new InvalidOperationException("Unknown clone query status.");
         }
 
-        if (repositories.Count != 1)
-        {
-            return CompleteResolution(GetInvalidCloneResults(), cancellationToken);
-        }
+        string repository = parsedQuery.Repository;
+        string location = parsedQuery.RepositoryName;
+        IReadOnlyList<string> cloneArguments = parsedQuery.Arguments;
 
-        string repository = repositories[0];
-        terms.RemoveAt(terms.IndexOf(repository));
-
-        if (!TryParseCloneArguments(terms, out IReadOnlyList<string> cloneArguments)
-            || !TryExtractRepositoryName(repository, out string location))
-        {
-            return CompleteResolution(GetInvalidCloneResults(), cancellationToken);
-        }
-
-        var settings = _settingsService.GetSettingsOrDefault();
+        var settings = _settingsService.GetSettings();
         OpenOption defaultPostAction = settings.OpenReposIn;
         IReadOnlyList<string> repoRoots = await _directoryService
             .GetExistingRepositoryRootsAsync(cancellationToken);
@@ -196,7 +188,7 @@ public class CloneCommand : ICommand
         {
             _context.API.ShowMsgError(
                 _context.API.GetTranslation(Translations.Error),
-                NormalizeDiagnostic(ex.Message));
+                CommandErrorFormatter.NormalizeDiagnostic(ex.Message));
         }
     }
 
@@ -209,17 +201,9 @@ public class CloneCommand : ICommand
 
     private void ShowCloneError(GitCommandResult result)
     {
-        string details = string.IsNullOrWhiteSpace(result.StandardError)
-            ? result.StandardOutput
-            : result.StandardError;
-        details = NormalizeDiagnostic(details);
-
-        if (string.IsNullOrWhiteSpace(details))
-        {
-            details = string.Format(
-                _context.API.GetTranslation(Translations.ErrorGitExitCode),
-                result.ExitCode);
-        }
+        string details = CommandErrorFormatter.GetGitFailureDetails(
+            result,
+            _context.API.GetTranslation(Translations.ErrorGitExitCode));
 
         _context.API.ShowMsgError(
             _context.API.GetTranslation(Translations.Error),
@@ -251,27 +235,15 @@ public class CloneCommand : ICommand
 
     private void ShowOpenRepositoryError(string destinationPath, Exception exception)
     {
-        string message = string.Format(
-            _context.API.GetTranslation(Translations.ErrorOpenRepository),
-            destinationPath);
-        string details = NormalizeDiagnostic(exception.Message);
-
-        if (!string.IsNullOrWhiteSpace(details))
-        {
-            message += $"{Environment.NewLine}{details}";
-        }
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                _context.API.GetTranslation(Translations.ErrorOpenRepository),
+                destinationPath),
+            exception.Message);
 
         _context.API.ShowMsgError(
             _context.API.GetTranslation(Translations.Error),
             message);
-    }
-
-    private static string NormalizeDiagnostic(string details)
-    {
-        details = details.Trim();
-        return details.Length > MaxDiagnosticLength
-            ? $"…{details[^(MaxDiagnosticLength - 1)..]}"
-            : details;
     }
 
     private List<Result> GetInvalidCloneResults()
@@ -286,104 +258,5 @@ public class CloneCommand : ICommand
                 Action = _ => true
             }
         };
-    }
-
-    private static bool TryParseCloneArguments(
-        IReadOnlyList<string> terms,
-        out IReadOnlyList<string> arguments)
-    {
-        List<string> parsedArguments = new();
-
-        for (int index = 0; index < terms.Count; index++)
-        {
-            string term = terms[index];
-
-            switch (term)
-            {
-                case "--branch":
-                case "-b":
-                    if (++index >= terms.Count
-                        || string.IsNullOrWhiteSpace(terms[index])
-                        || terms[index].StartsWith("-", StringComparison.Ordinal))
-                    {
-                        arguments = Array.Empty<string>();
-                        return false;
-                    }
-
-                    parsedArguments.Add(term);
-                    parsedArguments.Add(terms[index]);
-                    break;
-
-                case "--depth":
-                    if (++index >= terms.Count
-                        || !int.TryParse(terms[index], out int depth)
-                        || depth <= 0)
-                    {
-                        arguments = Array.Empty<string>();
-                        return false;
-                    }
-
-                    parsedArguments.Add(term);
-                    parsedArguments.Add(terms[index]);
-                    break;
-
-                case "--recurse-submodules":
-                case "--single-branch":
-                    parsedArguments.Add(term);
-                    break;
-
-                default:
-                    arguments = Array.Empty<string>();
-                    return false;
-            }
-        }
-
-        arguments = parsedArguments.ToArray();
-        return true;
-    }
-
-    private static bool TryExtractRepositoryName(string repositoryUrl, out string repositoryName)
-    {
-        string repositoryPath;
-
-        if (Uri.TryCreate(repositoryUrl, UriKind.Absolute, out Uri repositoryUri)
-            && repositoryUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-        {
-            repositoryPath = Uri.UnescapeDataString(repositoryUri.AbsolutePath);
-        }
-        else
-        {
-            int separatorIndex = repositoryUrl.IndexOf(':');
-
-            if (!repositoryUrl.StartsWith("git@", StringComparison.Ordinal)
-                || separatorIndex <= "git@".Length
-                || separatorIndex == repositoryUrl.Length - 1)
-            {
-                repositoryName = string.Empty;
-                return false;
-            }
-
-            string host = repositoryUrl["git@".Length..separatorIndex];
-            if (host.Any(char.IsWhiteSpace))
-            {
-                repositoryName = string.Empty;
-                return false;
-            }
-
-            repositoryPath = repositoryUrl[(separatorIndex + 1)..];
-        }
-
-        repositoryPath = repositoryPath.TrimEnd('/');
-        int lastSeparatorIndex = repositoryPath.LastIndexOf('/');
-        repositoryName = repositoryPath[(lastSeparatorIndex + 1)..];
-
-        if (repositoryName.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-        {
-            repositoryName = repositoryName[..^4];
-        }
-
-        return !string.IsNullOrWhiteSpace(repositoryName)
-            && repositoryName is not "." and not ".."
-            && repositoryName.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
     }
 }

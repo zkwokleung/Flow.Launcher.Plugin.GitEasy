@@ -65,7 +65,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
             },
         };
 
-        string repositoryPath = _settingsService.GetSettingsOrDefault()
+        string repositoryPath = _settingsService.GetSettings()
             .ReposPaths
             .FirstOrDefault();
 
@@ -123,7 +123,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
     {
         return new SettingsMenu(
             _context,
-            _settingsService.GetSettingsOrDefault(),
+            _settingsService.GetSettings(),
             _settingsService.SaveSettings);
     }
 }

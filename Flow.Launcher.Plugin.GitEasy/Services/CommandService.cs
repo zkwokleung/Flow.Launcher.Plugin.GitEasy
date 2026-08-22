@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public class CommandService : ICommandService
+public sealed class CommandService : ICommandService
 {
-    private readonly Dictionary<string, ICommand> _commands = new(StringComparer.InvariantCultureIgnoreCase);
+    private readonly Dictionary<string, ICommand> _commands = new(StringComparer.OrdinalIgnoreCase);
     private readonly PluginInitContext _context;
 
     public CommandService(IEnumerable<ICommand> commands, PluginInitContext context)
@@ -35,7 +35,10 @@ public class CommandService : ICommandService
 
         if (args.Length == 0)
         {
-            return ShowCommands(query.ActionKeyword, cancellationToken);
+            return GetCommandCompletionResults(
+                query.ActionKeyword,
+                string.Empty,
+                cancellationToken);
         }
 
         if (_commands.TryGetValue(args[0], out ICommand command))
@@ -51,7 +54,7 @@ public class CommandService : ICommandService
             return commandResults;
         }
 
-        List<Result> results = PreparePossibleCommands(
+        List<Result> results = GetCommandCompletionResults(
             query.ActionKeyword,
             search,
             cancellationToken);
@@ -59,23 +62,7 @@ public class CommandService : ICommandService
         return results.Count == 0 ? new() { GetInvalidResult() } : results;
     }
 
-    private List<Result> ShowCommands(
-        string actionKeyword,
-        CancellationToken cancellationToken)
-    {
-        var results = new List<Result>(_commands.Count);
-
-        foreach (ICommand command in _commands.Values)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            results.Add(PrepareCommandAutoCompleteResult(actionKeyword, command));
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return results;
-    }
-
-    private List<Result> PreparePossibleCommands(
+    private List<Result> GetCommandCompletionResults(
         string actionKeyword,
         string query,
         CancellationToken cancellationToken)
@@ -85,7 +72,8 @@ public class CommandService : ICommandService
         foreach (ICommand command in _commands.Values)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (command.Key.StartsWith(query, StringComparison.InvariantCultureIgnoreCase))
+            if (string.IsNullOrEmpty(query)
+                || command.Key.StartsWith(query, StringComparison.OrdinalIgnoreCase))
             {
                 results.Add(PrepareCommandAutoCompleteResult(actionKeyword, command));
             }

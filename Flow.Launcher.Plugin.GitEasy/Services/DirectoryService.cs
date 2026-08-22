@@ -109,7 +109,7 @@ public sealed class DirectoryService : IDirectoryService
     {
         var normalizedRoots = new List<string>();
 
-        foreach (string configuredRoot in _settingsService.GetSettingsOrDefault().ReposPaths)
+        foreach (string configuredRoot in _settingsService.GetSettings().ReposPaths)
         {
             if (RepositoryPathNormalizer.TryNormalize(configuredRoot, out string normalizedRoot)
                 && !normalizedRoots.Exists(existingRoot =>
