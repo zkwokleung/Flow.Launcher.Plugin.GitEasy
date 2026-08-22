@@ -1,31 +1,24 @@
 using Flow.Launcher.Plugin.GitEasy.Models.Exceptions;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Security;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public sealed class DirectoryService : IDirectoryService
 {
     private readonly ISettingsService _settingsService;
+    private readonly PluginInitContext _context;
 
-    public DirectoryService(ISettingsService settingsService)
+    public DirectoryService(ISettingsService settingsService, PluginInitContext context)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
-    }
-
-    public List<string> GetDirectories(string path)
-    {
-        return Directory.GetDirectories(path).ToList();
-    }
-
-    public bool VerifyRepositoriesPath()
-    {
-        return _settingsService.GetSettingsOrDefault()
-            .ReposPaths
-            .Any(Directory.Exists);
+        _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
     public void CreateDirectory(string path)
@@ -38,41 +31,111 @@ public sealed class DirectoryService : IDirectoryService
         Directory.CreateDirectory(path);
     }
 
-    public void CreateRepositoriesDirectory()
+    public Task<IReadOnlyList<string>> GetExistingRepositoryRootsAsync(
+        CancellationToken cancellationToken)
     {
-        string repositoryPath = _settingsService.GetSettingsOrDefault()
-            .ReposPaths
-            .FirstOrDefault();
+        string[] repositoryRoots = GetRepositoryRootsSnapshot();
 
-        if (repositoryPath == null)
+        return Task.Run<IReadOnlyList<string>>(() =>
         {
-            throw new InvalidPathException();
-        }
+            var result = new List<string>();
 
-        CreateDirectory(repositoryPath);
+            foreach (string root in repositoryRoots)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (Directory.Exists(root))
+                {
+                    result.Add(root);
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return result.ToArray();
+        }, cancellationToken);
     }
 
-    public List<string> GetRepositoriesDirectories()
+    public Task<IReadOnlyList<string>> GetRepositoriesDirectoriesAsync(
+        CancellationToken cancellationToken)
     {
-        var result = new List<string>();
+        string[] repositoryRoots = GetRepositoryRootsSnapshot();
 
-        foreach (string root in _settingsService.GetSettingsOrDefault().ReposPaths)
+        return Task.Run<IReadOnlyList<string>>(() =>
         {
-            if (!Directory.Exists(root))
+            var result = new List<string>();
+
+            foreach (string root in repositoryRoots)
             {
-                continue;
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!Directory.Exists(root))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var rootDirectories = new List<string>();
+                    foreach (string directory in Directory.EnumerateDirectories(root))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        rootDirectories.Add(directory);
+                    }
+
+                    rootDirectories.Sort(CompareDirectoryPaths);
+                    foreach (string directory in rootDirectories)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!result.Exists(existingDirectory =>
+                            RepositoryPathNormalizer.AreEquivalent(existingDirectory, directory)))
+                        {
+                            result.Add(directory);
+                        }
+                    }
+                }
+                catch (Exception exception) when (IsRecoverableDirectoryEnumerationException(exception))
+                {
+                    _context.API.LogException(
+                        nameof(DirectoryService),
+                        $"Failed to enumerate repository root '{root}'.",
+                        exception);
+                }
             }
 
-            try
+            cancellationToken.ThrowIfCancellationRequested();
+            return result.ToArray();
+        }, cancellationToken);
+    }
+
+    private string[] GetRepositoryRootsSnapshot()
+    {
+        var normalizedRoots = new List<string>();
+
+        foreach (string configuredRoot in _settingsService.GetSettingsOrDefault().ReposPaths)
+        {
+            if (RepositoryPathNormalizer.TryNormalize(configuredRoot, out string normalizedRoot)
+                && !normalizedRoots.Exists(existingRoot =>
+                    RepositoryPathNormalizer.AreEquivalent(existingRoot, normalizedRoot)))
             {
-                result.AddRange(GetDirectories(root));
-            }
-            catch (Exception)
-            {
-                // Root-level filesystem failures are isolated until repository search is redesigned.
+                normalizedRoots.Add(normalizedRoot);
             }
         }
 
-        return result;
+        return normalizedRoots.ToArray();
+    }
+
+    private static int CompareDirectoryPaths(string firstPath, string secondPath)
+    {
+        int caseInsensitiveComparison = StringComparer.OrdinalIgnoreCase.Compare(firstPath, secondPath);
+        return caseInsensitiveComparison != 0
+            ? caseInsensitiveComparison
+            : StringComparer.Ordinal.Compare(firstPath, secondPath);
+    }
+
+    private static bool IsRecoverableDirectoryEnumerationException(Exception exception)
+    {
+        return exception is IOException
+            or UnauthorizedAccessException
+            or SecurityException
+            or ArgumentException
+            or NotSupportedException;
     }
 }

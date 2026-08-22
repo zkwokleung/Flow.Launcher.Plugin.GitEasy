@@ -22,27 +22,34 @@ public class CloneCommand : ICommand
     private readonly PluginInitContext _context;
     private readonly IGitCommandService _gitCommandService;
     private readonly ISettingsService _settingsService;
+    private readonly IDirectoryService _directoryService;
     private readonly ISystemCommandService _systemCommandService;
 
     public CloneCommand(
         PluginInitContext context,
         ISettingsService settingsService,
+        IDirectoryService directoryService,
         IGitCommandService gitCommandService,
-        ISystemCommandService systemCommandService
-        )
+        ISystemCommandService systemCommandService)
     {
         _context = context;
         _settingsService = settingsService;
+        _directoryService = directoryService;
         _gitCommandService = gitCommandService;
         _systemCommandService = systemCommandService;
     }
 
-    public List<Result> Resolve(string query, string actionKeyword)
+    public async Task<List<Result>> ResolveAsync(
+        string query,
+        string actionKeyword,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (string.IsNullOrWhiteSpace(query))
         {
             // Display a hint result
-            return new()
+            return CompleteResolution(new()
             {
                 new Result
                 {
@@ -50,7 +57,7 @@ public class CloneCommand : ICommand
                     IcoPath = Icons.Logo,
                     Action = _ => true,
                 }
-            };
+            }, cancellationToken);
         }
 
         List<string> terms = query
@@ -60,7 +67,7 @@ public class CloneCommand : ICommand
 
         if (repositories.Count == 0)
         {
-            return new()
+            return CompleteResolution(new()
             {
                 new Result
                 {
@@ -68,12 +75,12 @@ public class CloneCommand : ICommand
                     IcoPath = Icons.Logo,
                     Action = _ => true
                 }
-            };
+            }, cancellationToken);
         }
 
         if (repositories.Count != 1)
         {
-            return GetInvalidCloneResults();
+            return CompleteResolution(GetInvalidCloneResults(), cancellationToken);
         }
 
         string repository = repositories[0];
@@ -82,22 +89,20 @@ public class CloneCommand : ICommand
         if (!TryParseCloneArguments(terms, out IReadOnlyList<string> cloneArguments)
             || !TryExtractRepositoryName(repository, out string location))
         {
-            return GetInvalidCloneResults();
+            return CompleteResolution(GetInvalidCloneResults(), cancellationToken);
         }
 
         var settings = _settingsService.GetSettingsOrDefault();
         OpenOption defaultPostAction = settings.OpenReposIn;
-        List<string> repoRoots = (settings.ReposPaths ?? new())
-            .Where(root => !string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
-            .Select(Path.GetFullPath)
-            .Select(Path.TrimEndingDirectorySeparator)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        IReadOnlyList<string> repoRoots = await _directoryService
+            .GetExistingRepositoryRootsAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
 
         List<Result> results = new();
 
         foreach (string root in repoRoots)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             string destinationPath = Path.Combine(root, location);
 
             // Default clone (follow OpenReposIn setting)
@@ -150,6 +155,14 @@ public class CloneCommand : ICommand
             });
         }
 
+        return CompleteResolution(results, cancellationToken);
+    }
+
+    private static List<Result> CompleteResolution(
+        List<Result> results,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         return results;
     }
 

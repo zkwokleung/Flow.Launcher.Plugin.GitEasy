@@ -4,7 +4,7 @@ using Flow.Launcher.Plugin.GitEasy.Utilities;
 using FuzzySharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
@@ -35,17 +35,24 @@ public class OpenCommand : ICommand
         _systemCommandService = systemCommandService;
     }
 
-    public List<Result> Resolve(string query, string actionKeyword)
+    public async Task<List<Result>> ResolveAsync(
+        string query,
+        string actionKeyword,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         OpenOption openOption = _settingsService.GetSettingsOrDefault().OpenReposIn;
-        List<string> directories = _directoryService.GetRepositoriesDirectories();
+        IReadOnlyList<string> directories = await _directoryService
+            .GetRepositoriesDirectoriesAsync(cancellationToken);
+        var results = new List<Result>(directories.Count);
 
-        return directories.Select(directory =>
+        foreach (string directory in directories)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             string repositoryName = DirectoryUtils.ExtractRepositoryNameFromDirectory(directory);
             int score = Fuzz.Ratio(directory, query);
 
-            return new Result
+            results.Add(new Result
             {
                 Title = repositoryName,
                 SubTitle = string.Format(
@@ -61,8 +68,11 @@ public class OpenCommand : ICommand
                     await OpenRepositoryAsync(directory, openOption);
                     return true;
                 }
-            };
-        }).ToList();
+            });
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return results;
     }
 
     private async Task OpenRepositoryAsync(string repositoryPath, OpenOption openOption)

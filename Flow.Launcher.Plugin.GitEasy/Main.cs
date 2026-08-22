@@ -21,7 +21,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
     private ISettingsService _settingsService;
     private IDirectoryService _directoryService;
 
-    public async Task InitAsync(PluginInitContext context)
+    public Task InitAsync(PluginInitContext context)
     {
         ServiceProvider = new ServiceCollection()
             .InjectServices(context)
@@ -32,14 +32,22 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
         _commandService = ServiceProvider.GetService<ICommandService>();
         _settingsService = ServiceProvider.GetService<ISettingsService>();
         _directoryService = ServiceProvider.GetService<IDirectoryService>();
+
+        return Task.CompletedTask;
     }
 
     public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
     {
-        if (_directoryService.VerifyRepositoriesPath())
+        token.ThrowIfCancellationRequested();
+        IReadOnlyList<string> existingRoots = await _directoryService
+            .GetExistingRepositoryRootsAsync(token);
+
+        if (existingRoots.Count > 0)
         {
-            return await _commandService.Resolve(query);
+            return await _commandService.ResolveAsync(query, token);
         }
+
+        token.ThrowIfCancellationRequested();
 
         var results = new List<Result>
         {
@@ -63,6 +71,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
 
         if (repositoryPath == null)
         {
+            token.ThrowIfCancellationRequested();
             return results;
         }
 
@@ -96,6 +105,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
             },
         });
 
+        token.ThrowIfCancellationRequested();
         return results;
     }
 
