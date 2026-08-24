@@ -25,9 +25,13 @@ public static class Translations
     public const string QueryResultFetchMsg = "giteasy_query_result_fetch_msg";
 
     // Message
+    public const string QueryCloneStarted = "giteasy_query_clone_started";
+    public const string QueryCloneStartedMsg = "giteasy_query_clone_started_msg";
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
     public const string QueryCloneCompleteMsg = "giteasy_query_clone_complete_msg";
 
+    public const string QueryFetchStarted = "giteasy_query_fetch_started";
+    public const string QueryFetchStartedMsg = "giteasy_query_fetch_started_msg";
     public const string QueryFetchComplete = "giteasy_query_fetch_complete";
     public const string QueryFetchCompleteMsg = "giteasy_query_fetch_complete_msg";
 
@@ -42,6 +46,7 @@ public static class Translations
     public const string ErrorInvalidCmd = "giteasy_error_invalid_cmd";
     public const string ErrorInvalidCmdMsg = "giteasy_error_invalid_cmd_msg";
     public const string ErrorInvalidReposPath = "giteasy_error_invalid_repos_path";
+    public const string ErrorCloneMsg = "giteasy_error_clone_msg";
     public const string ErrorFetchMsg = "giteasy_error_fetch_msg";
     public const string ErrorCloneTimeout = "giteasy_error_clone_timeout";
     public const string ErrorFetchTimeout = "giteasy_error_fetch_timeout";

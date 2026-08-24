@@ -28,11 +28,15 @@
     <system:String x:Key="giteasy_query_result_fetch_msg">Fetch {0}</system:String>
 
     <!--  Messages -->
-    <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
-    <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>
+    <system:String x:Key="giteasy_query_clone_started">Clone started</system:String>
+    <system:String x:Key="giteasy_query_clone_started_msg">Cloning {0} to {1} in the background.</system:String>
+    <system:String x:Key="giteasy_query_clone_complete">Clone completed</system:String>
+    <system:String x:Key="giteasy_query_clone_complete_msg">{0} was cloned successfully.</system:String>
 
-    <system:String x:Key="giteasy_query_fetch_complete">Fetch Completed</system:String>
-    <system:String x:Key="giteasy_query_fetch_complete_msg">{0} is fetched.</system:String>
+    <system:String x:Key="giteasy_query_fetch_started">Fetch started</system:String>
+    <system:String x:Key="giteasy_query_fetch_started_msg">Fetching {0} in the background.</system:String>
+    <system:String x:Key="giteasy_query_fetch_complete">Fetch completed</system:String>
+    <system:String x:Key="giteasy_query_fetch_complete_msg">{0} was fetched successfully.</system:String>
     
     <system:String x:Key="giteasy_query_open_settings">Open plugin settings</system:String>
     <system:String x:Key="giteasy_query_create_folder">Create the folder {0}</system:String>
@@ -66,7 +70,8 @@
     <system:String x:Key="giteasy_error_invalid_cmd_msg">Please double check your command.</system:String>
     <system:String x:Key="giteasy_error_invalid_repos_path">Invalid repositories path. Please specify it in the plugin setting.</system:String>
 
-    <system:String x:Key="giteasy_error_fetch_msg">Error fetching {0}</system:String>
+    <system:String x:Key="giteasy_error_clone_msg">Failed to clone {0}.</system:String>
+    <system:String x:Key="giteasy_error_fetch_msg">Failed to fetch {0}.</system:String>
     <system:String x:Key="giteasy_error_clone_timeout">Cloning timed out. A partial folder may remain at {0}.</system:String>
     <system:String x:Key="giteasy_error_fetch_timeout">Fetching {0} timed out.</system:String>
     <system:String x:Key="giteasy_error_git_exit_code">Git exited with code {0}.</system:String>

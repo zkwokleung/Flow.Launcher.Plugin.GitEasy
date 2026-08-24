@@ -100,41 +100,45 @@ public class CloneCommand : ICommand
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultClone)} {location} → {root}",
                 SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultCloneMsg), repository, root),
                 IcoPath = Icons.Logo,
-                AsyncAction = async _ =>
-                {
-                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, defaultPostAction);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    defaultPostAction)
             });
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer)} ({root})",
                 IcoPath = Icons.Explorer,
-                AsyncAction = async _ =>
-                {
-                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, OpenOption.FileExplorer);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    OpenOption.FileExplorer)
             });
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode)} ({root})",
                 IcoPath = Icons.VSCode,
-                AsyncAction = async _ =>
-                {
-                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, OpenOption.VSCode);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    OpenOption.VSCode)
             });
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
                 IcoPath = Icons.Cursor,
-                AsyncAction = async _ =>
-                {
-                    await ExecuteCloneAsync(repository, cloneArguments, destinationPath, location, OpenOption.Cursor);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    OpenOption.Cursor)
             });
         }
 
@@ -147,6 +151,25 @@ public class CloneCommand : ICommand
     {
         cancellationToken.ThrowIfCancellationRequested();
         return results;
+    }
+
+    private bool StartCloneInBackground(
+        string repositoryUrl,
+        IReadOnlyList<string> arguments,
+        string destinationPath,
+        string location,
+        OpenOption postAction)
+    {
+        _context.API.ShowMsg(
+            _context.API.GetTranslation(Translations.QueryCloneStarted),
+            string.Format(
+                _context.API.GetTranslation(Translations.QueryCloneStartedMsg),
+                location,
+                destinationPath),
+            iconPath: Icons.Logo);
+
+        _ = ExecuteCloneAsync(repositoryUrl, arguments, destinationPath, location, postAction);
+        return true;
     }
 
     private async Task ExecuteCloneAsync(
@@ -169,7 +192,7 @@ public class CloneCommand : ICommand
 
             if (!result.Succeeded)
             {
-                ShowCloneError(result);
+                ShowCloneError(location, result);
                 return;
             }
 
@@ -186,9 +209,7 @@ public class CloneCommand : ICommand
         }
         catch (Exception ex)
         {
-            _context.API.ShowMsgError(
-                _context.API.GetTranslation(Translations.Error),
-                CommandErrorFormatter.NormalizeDiagnostic(ex.Message));
+            ShowCloneError(location, ex.Message);
         }
     }
 
@@ -196,18 +217,32 @@ public class CloneCommand : ICommand
     {
         _context.API.ShowMsg(
             _context.API.GetTranslation(Translations.QueryCloneComplete),
-            $"{_context.API.GetTranslation(Translations.QueryCloneCompleteMsg)} {location}");
+            string.Format(
+                _context.API.GetTranslation(Translations.QueryCloneCompleteMsg),
+                location),
+            iconPath: Icons.Logo);
     }
 
-    private void ShowCloneError(GitCommandResult result)
+    private void ShowCloneError(string location, GitCommandResult result)
     {
         string details = CommandErrorFormatter.GetGitFailureDetails(
             result,
             _context.API.GetTranslation(Translations.ErrorGitExitCode));
 
+        ShowCloneError(location, details);
+    }
+
+    private void ShowCloneError(string location, string details)
+    {
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                _context.API.GetTranslation(Translations.ErrorCloneMsg),
+                location),
+            details);
+
         _context.API.ShowMsgError(
             _context.API.GetTranslation(Translations.Error),
-            details);
+            message);
     }
 
     private async Task OpenRepositoryAsync(string destinationPath, OpenOption postAction)

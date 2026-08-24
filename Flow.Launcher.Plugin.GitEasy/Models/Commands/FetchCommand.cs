@@ -29,7 +29,20 @@ public class FetchCommand : RepositoryCommandBase
 
     protected override Func<string, string, Task> CreateRepositoryAction()
     {
-        return ExecuteFetchAsync;
+        return StartFetchInBackground;
+    }
+
+    private Task StartFetchInBackground(string repositoryPath, string repositoryName)
+    {
+        Context.API.ShowMsg(
+            Context.API.GetTranslation(Translations.QueryFetchStarted),
+            string.Format(
+                Context.API.GetTranslation(Translations.QueryFetchStartedMsg),
+                repositoryName),
+            iconPath: IconPath);
+
+        _ = ExecuteFetchAsync(repositoryPath, repositoryName);
+        return Task.CompletedTask;
     }
 
     private async Task ExecuteFetchAsync(string repositoryPath, string repositoryName)
