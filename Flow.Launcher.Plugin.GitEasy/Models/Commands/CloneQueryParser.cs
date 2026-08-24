@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using Flow.Launcher.Plugin.GitEasy.Utilities;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
@@ -164,8 +164,6 @@ internal static class CloneQueryParser
             repositoryName = repositoryName[..^4];
         }
 
-        return !string.IsNullOrWhiteSpace(repositoryName)
-            && repositoryName is not "." and not ".."
-            && repositoryName.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+        return WindowsFileNameValidator.IsValidLeafName(repositoryName);
     }
 }

@@ -2,6 +2,7 @@ using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
 using Flow.Launcher.Plugin.GitEasy.Models.Processes;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Utilities;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -111,9 +112,22 @@ public sealed class GitCommandService : IGitCommandService
             throw new ArgumentException("Destination path cannot be empty.", nameof(options));
         }
 
-        string destinationPath = Path.GetFullPath(options.DestinationPath);
-        string destinationRoot = Path.GetDirectoryName(destinationPath)
-            ?? throw new ArgumentException("Destination path must have a parent directory.", nameof(options));
+        string unnormalizedDestinationPath = Path.TrimEndingDirectorySeparator(options.DestinationPath);
+        string repositoryName = Path.GetFileName(unnormalizedDestinationPath);
+        if (!WindowsFileNameValidator.IsValidLeafName(repositoryName))
+        {
+            throw new ArgumentException("Destination path must end with a valid Windows directory name.", nameof(options));
+        }
+
+        string unnormalizedDestinationRoot = Path.GetDirectoryName(unnormalizedDestinationPath);
+        string destinationRoot = Path.GetFullPath(
+            string.IsNullOrEmpty(unnormalizedDestinationRoot)
+                ? Directory.GetCurrentDirectory()
+                : unnormalizedDestinationRoot);
+        string destinationPath = Path.GetFullPath(unnormalizedDestinationPath);
+
+        EnsureStrictChildPath(destinationRoot, destinationPath, options);
+        EnsureConfiguredRepositoryRoot(destinationRoot, options);
 
         if (!Directory.Exists(destinationRoot))
         {
@@ -125,9 +139,17 @@ public sealed class GitCommandService : IGitCommandService
             throw new IOException($"Clone destination is an existing file: {destinationPath}");
         }
 
-        if (Directory.Exists(destinationPath) && Directory.EnumerateFileSystemEntries(destinationPath).Any())
+        if (Directory.Exists(destinationPath))
         {
-            throw new IOException($"Clone destination is not empty: {destinationPath}");
+            if ((File.GetAttributes(destinationPath) & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new IOException($"Clone destination cannot be a reparse point: {destinationPath}");
+            }
+
+            if (Directory.EnumerateFileSystemEntries(destinationPath).Any())
+            {
+                throw new IOException($"Clone destination is not empty: {destinationPath}");
+            }
         }
 
         return PrepareGitCloneProcessStartInfo(
@@ -183,6 +205,46 @@ public sealed class GitCommandService : IGitCommandService
         info.Environment["GIT_TERMINAL_PROMPT"] = "0";
 
         return info;
+    }
+
+    private static void EnsureStrictChildPath(
+        string parentPath,
+        string childPath,
+        GitCloneCommandOptions options)
+    {
+        string relativePath = Path.GetRelativePath(parentPath, childPath);
+        bool escapesParent = relativePath.Equals("..", StringComparison.Ordinal)
+            || relativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            || relativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal);
+
+        if (relativePath.Equals(".", StringComparison.Ordinal)
+            || Path.IsPathRooted(relativePath)
+            || relativePath.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0
+            || escapesParent)
+        {
+            throw new ArgumentException(
+                "Clone destination must be a child of its repository root.",
+                nameof(options));
+        }
+    }
+
+    private void EnsureConfiguredRepositoryRoot(
+        string destinationRoot,
+        GitCloneCommandOptions options)
+    {
+        bool isConfiguredRoot = _settingsService
+            .GetSettings()
+            .ReposPaths
+            .Any(configuredRoot =>
+                RepositoryPathNormalizer.TryNormalize(configuredRoot, out string normalizedRoot)
+                && RepositoryPathNormalizer.AreEquivalent(normalizedRoot, destinationRoot));
+
+        if (!isConfiguredRoot)
+        {
+            throw new ArgumentException(
+                "Clone destination must be inside a configured repository root.",
+                nameof(options));
+        }
     }
 
     private static ProcessStartInfo PrepareGitFetchProcessStartInfo(

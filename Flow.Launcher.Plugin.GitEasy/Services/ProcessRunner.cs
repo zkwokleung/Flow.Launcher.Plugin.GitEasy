@@ -13,6 +13,8 @@ namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public sealed class ProcessRunner : IProcessRunner
 {
+    private const int MaximumCapturedCharactersPerStream = 64 * 1024;
+
     public async Task<ProcessExecutionResult> RunAsync(
         ProcessStartInfo startInfo,
         CancellationToken cancellationToken = default)
@@ -123,7 +125,7 @@ public sealed class ProcessRunner : IProcessRunner
 
         try
         {
-            var output = new StringBuilder();
+            var output = new BoundedCharacterBuffer(MaximumCapturedCharactersPerStream);
 
             while (true)
             {
@@ -136,7 +138,7 @@ public sealed class ProcessRunner : IProcessRunner
                     return output.ToString();
                 }
 
-                output.Append(buffer, 0, charactersRead);
+                output.Append(buffer.AsSpan(0, charactersRead));
             }
         }
         finally
@@ -204,6 +206,61 @@ public sealed class ProcessRunner : IProcessRunner
         if (string.IsNullOrWhiteSpace(startInfo.FileName))
         {
             throw new ArgumentException("A process executable is required.", nameof(startInfo));
+        }
+    }
+
+    private sealed class BoundedCharacterBuffer
+    {
+        private readonly char[] _buffer;
+        private int _length;
+        private int _writeIndex;
+
+        public BoundedCharacterBuffer(int capacity)
+        {
+            _buffer = new char[capacity];
+        }
+
+        public void Append(ReadOnlySpan<char> value)
+        {
+            if (value.Length >= _buffer.Length)
+            {
+                value[^_buffer.Length..].CopyTo(_buffer);
+                _length = _buffer.Length;
+                _writeIndex = 0;
+                return;
+            }
+
+            int firstSegmentLength = Math.Min(value.Length, _buffer.Length - _writeIndex);
+            value[..firstSegmentLength].CopyTo(_buffer.AsSpan(_writeIndex));
+
+            int secondSegmentLength = value.Length - firstSegmentLength;
+            if (secondSegmentLength > 0)
+            {
+                value[firstSegmentLength..].CopyTo(_buffer);
+            }
+
+            _writeIndex = (_writeIndex + value.Length) % _buffer.Length;
+            _length = Math.Min(_length + value.Length, _buffer.Length);
+        }
+
+        public override string ToString()
+        {
+            if (_length == 0)
+            {
+                return string.Empty;
+            }
+
+            int startIndex = (_writeIndex - _length + _buffer.Length) % _buffer.Length;
+            if (startIndex + _length <= _buffer.Length)
+            {
+                return new string(_buffer, startIndex, _length);
+            }
+
+            int firstSegmentLength = _buffer.Length - startIndex;
+            return new StringBuilder(_length)
+                .Append(_buffer, startIndex, firstSegmentLength)
+                .Append(_buffer, 0, _length - firstSegmentLength)
+                .ToString();
         }
     }
 }
