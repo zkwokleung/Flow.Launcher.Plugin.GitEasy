@@ -95,9 +95,9 @@ public partial class SettingsMenu : UserControl
         }
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    private async void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        _viewModel.FlushPendingChanges();
+        await _viewModel.FlushPendingChangesAsync();
     }
 
     private void ShowSaveError(Exception exception)

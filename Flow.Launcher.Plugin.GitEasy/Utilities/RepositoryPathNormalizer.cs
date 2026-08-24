@@ -65,7 +65,6 @@ public static class RepositoryPathNormalizer
         foreach (string path in paths)
         {
             if (TryNormalize(path, out string normalizedPath)
-                && !File.Exists(normalizedPath)
                 && normalizedPaths.All(existingPath => !AreEquivalent(existingPath, normalizedPath)))
             {
                 normalizedPaths.Add(normalizedPath);

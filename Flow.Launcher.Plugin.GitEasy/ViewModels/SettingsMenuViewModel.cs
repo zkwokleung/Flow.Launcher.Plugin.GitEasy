@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace Flow.Launcher.Plugin.GitEasy.ViewModels;
@@ -18,8 +19,11 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
     private readonly Action _saveSettings;
     private readonly Action<Exception> _handleSaveError;
     private readonly DispatcherTimer _saveTimer;
+    private readonly SettingsPathValidationCoordinator _pathValidationCoordinator;
     private readonly ObservableCollection<RepositoryPathRowViewModel> _repositoryPaths;
     private readonly Dictionary<RepositoryPathRowViewModel, string> _committedRepositoryPaths;
+    private readonly Dictionary<string, FileSystemPathKind> _repositoryPathProbeResults = new(StringComparer.Ordinal);
+    private GitPathProbeCache _gitPathProbeResult;
     private string _gitPath;
     private OpenOption _selectedOpenReposIn;
     private bool _hasGitPathError;
@@ -48,9 +52,15 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
         _repositoryPaths.CollectionChanged += OnRepositoryPathsCollectionChanged;
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
         _saveTimer.Tick += OnSaveTimerTick;
+        _pathValidationCoordinator = new SettingsPathValidationCoordinator(
+            TimeSpan.FromMilliseconds(250),
+            CapturePathProbeRequest,
+            ApplyPathProbeResult,
+            _handleSaveError);
 
         RevalidateRepositoryPaths();
         ValidateGitPath();
+        _pathValidationCoordinator.Schedule(saveAfterValidation: false);
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -73,6 +83,7 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
             _gitPath = nextPath;
             OnPropertyChanged();
             ValidateGitPath();
+            _pathValidationCoordinator.Schedule(saveAfterValidation: true);
             ScheduleSave();
         }
     }
@@ -138,9 +149,16 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
         MoveRepositoryPath(row, 1);
     }
 
-    public void FlushPendingChanges()
+    public async Task FlushPendingChangesAsync()
     {
-        CommitChanges();
+        _saveTimer.Stop();
+        bool latestSnapshotApplied = await _pathValidationCoordinator.FlushAsync();
+        _saveTimer.Stop();
+
+        if (latestSnapshotApplied)
+        {
+            CommitChanges();
+        }
     }
 
     public void CommitChanges()
@@ -154,9 +172,12 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
 
         _settings.ReposPaths = BuildRepositoryPaths(nextCommittedPaths);
 
-        if (!HasGitPathError)
+        if (TryGetGitPathCandidate(out string gitPath)
+            && _gitPathProbeResult != null
+            && string.Equals(_gitPathProbeResult.Path, gitPath, StringComparison.OrdinalIgnoreCase)
+            && _gitPathProbeResult.Exists)
         {
-            _settings.GitPath = _gitPath.Trim();
+            _settings.GitPath = gitPath;
         }
 
         _settings.OpenReposIn = _selectedOpenReposIn;
@@ -199,6 +220,7 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
         }
 
         RevalidateRepositoryPaths();
+        _pathValidationCoordinator.Schedule(saveAfterValidation: true);
         CommitChanges();
     }
 
@@ -210,6 +232,7 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
         }
 
         RevalidateRepositoryPaths();
+        _pathValidationCoordinator.Schedule(saveAfterValidation: true);
         ScheduleSave();
     }
 
@@ -231,16 +254,21 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
             {
                 row.ValidationState = RepositoryPathValidationState.Invalid;
             }
-            else if (File.Exists(normalizedPath))
-            {
-                row.ValidationState = RepositoryPathValidationState.File;
-            }
             else
             {
-                normalizedPaths.Add(row, normalizedPath);
-                row.ValidationState = Directory.Exists(normalizedPath)
-                    ? RepositoryPathValidationState.Valid
+                row.ValidationState = TryGetRepositoryPathProbe(normalizedPath, out FileSystemPathKind kind)
+                    ? kind switch
+                    {
+                        FileSystemPathKind.Directory => RepositoryPathValidationState.Valid,
+                        FileSystemPathKind.File => RepositoryPathValidationState.File,
+                        _ => RepositoryPathValidationState.Unavailable,
+                    }
                     : RepositoryPathValidationState.Unavailable;
+
+                if (row.ValidationState != RepositoryPathValidationState.File)
+                {
+                    normalizedPaths.Add(row, normalizedPath);
+                }
             }
         }
 
@@ -257,11 +285,13 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
             string path;
             if (!IsBlockingRepositoryDraft(row)
                 && RepositoryPathNormalizer.TryNormalize(row.Path, out string normalizedPath)
-                && !File.Exists(normalizedPath))
+                && TryGetRepositoryPathProbe(normalizedPath, out FileSystemPathKind kind)
+                && kind != FileSystemPathKind.File)
             {
                 path = normalizedPath;
             }
-            else if (!_committedRepositoryPaths.TryGetValue(row, out path))
+            else if (!_committedRepositoryPaths.TryGetValue(row, out path)
+                     || IsCommittedRepositoryPathConfirmedFile(path))
             {
                 continue;
             }
@@ -334,10 +364,80 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
 
     private void ValidateGitPath()
     {
-        string candidate = _gitPath.Trim();
-        HasGitPathError = !Path.IsPathFullyQualified(candidate)
-                          || !File.Exists(candidate)
-                          || !string.Equals(Path.GetFileName(candidate), "git.exe", StringComparison.OrdinalIgnoreCase);
+        if (!TryGetGitPathCandidate(out string candidate))
+        {
+            HasGitPathError = true;
+            return;
+        }
+
+        HasGitPathError = _gitPathProbeResult != null
+                          && string.Equals(_gitPathProbeResult.Path, candidate, StringComparison.OrdinalIgnoreCase)
+                          && !_gitPathProbeResult.Exists;
+    }
+
+    private bool TryGetGitPathCandidate(out string candidate)
+    {
+        candidate = _gitPath.Trim();
+        return Path.IsPathFullyQualified(candidate)
+               && string.Equals(Path.GetFileName(candidate), "git.exe", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool TryGetRepositoryPathProbe(
+        string normalizedPath,
+        out FileSystemPathKind kind)
+    {
+        return _repositoryPathProbeResults.TryGetValue(normalizedPath, out kind);
+    }
+
+    private bool IsCommittedRepositoryPathConfirmedFile(string committedPath)
+    {
+        return RepositoryPathNormalizer.TryNormalize(committedPath, out string normalizedPath)
+               && TryGetRepositoryPathProbe(normalizedPath, out FileSystemPathKind kind)
+               && kind == FileSystemPathKind.File;
+    }
+
+    private bool HasConfirmedCommittedRepositoryFile()
+    {
+        return _committedRepositoryPaths.Values.Any(IsCommittedRepositoryPathConfirmedFile);
+    }
+
+    private SettingsPathProbeRequest CapturePathProbeRequest()
+    {
+        string gitPath = TryGetGitPathCandidate(out string gitPathCandidate)
+            ? gitPathCandidate
+            : string.Empty;
+        string[] repositoryPaths = _repositoryPaths
+            .Select(row => row.Path)
+            .Concat(_committedRepositoryPaths.Values)
+            .Select(path => RepositoryPathNormalizer.TryNormalize(path, out string normalizedPath)
+                ? normalizedPath
+                : null)
+            .Where(path => path != null)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        return new SettingsPathProbeRequest(gitPath, repositoryPaths);
+    }
+
+    private void ApplyPathProbeResult(
+        SettingsPathProbeResult result,
+        bool saveAfterValidation)
+    {
+        _repositoryPathProbeResults.Clear();
+
+        foreach ((string path, FileSystemPathKind kind) in result.RepositoryPaths)
+        {
+            _repositoryPathProbeResults.Add(path, kind);
+        }
+
+        _gitPathProbeResult = new GitPathProbeCache(result.GitPath, result.GitPathExists);
+        RevalidateRepositoryPaths();
+        ValidateGitPath();
+
+        if (saveAfterValidation || HasConfirmedCommittedRepositoryFile())
+        {
+            ScheduleSave();
+        }
     }
 
     private void MoveRepositoryPath(RepositoryPathRowViewModel row, int offset)
@@ -377,4 +477,6 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    private sealed record GitPathProbeCache(string Path, bool Exists);
 }
