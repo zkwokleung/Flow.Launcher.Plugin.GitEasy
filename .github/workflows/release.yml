@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7
 
       - name: Configure release paths
         run: |
@@ -27,7 +27,7 @@ jobs:
           "ARCHIVE_PATH=$env:RUNNER_TEMP\Flow.Launcher.Plugin.GitEasy.zip" >> $env:GITHUB_ENV
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 9.0.x
 
@@ -105,7 +105,7 @@ jobs:
           "archive_path=$env:ARCHIVE_PATH" >> $env:GITHUB_OUTPUT
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ steps.package.outputs.archive_path }}
           name: Git Easy ${{ steps.version.outputs.version }}
