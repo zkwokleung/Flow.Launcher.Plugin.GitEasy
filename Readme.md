@@ -9,13 +9,10 @@ Requires Flow Launcher 2.0.0 or later and Windows 10 or later.
 
 ## Features
 
-- Clone HTTPS or SCP-style SSH repository URLs into any configured repository root.
-- Pass supported clone options without opening a terminal.
+- Clone repository into any configured repository root.
 - Search repositories across multiple roots with fuzzy matching.
 - Open repositories in File Explorer, Visual Studio Code, or Cursor.
 - Fetch an existing repository with one action.
-- Cancel stale searches cleanly while a new Flow query is being resolved.
-- Auto-discover Git for Windows, with a manual executable-path override.
 
 ## Usage
 
@@ -64,6 +61,4 @@ dotnet build Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.csproj -c
 dotnet publish Flow.Launcher.Plugin.GitEasy/Flow.Launcher.Plugin.GitEasy.csproj -c Release -r win-x64 --no-self-contained --no-restore
 ```
 
-Pull requests and pushes to `main` or `develop` run formatting and publish verification. A release is created only from a `vMAJOR.MINOR.PATCH` tag that exactly matches the version in `plugin.json`.
-
-Contributions and focused feature proposals are welcome.
+This started as a very personal project. You are very welcomed to contribute and adding your own ideas.
