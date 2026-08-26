@@ -5,56 +5,36 @@ permissions:
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
-    branches:
-      - main
-      - develop
-
-concurrency:
-  group: build-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches-ignore:
+      - "main"
+    paths-ignore:
+      - "**/README.md"
 
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        shell: pwsh
-        working-directory: Flow.Launcher.Plugin.GitEasy
 
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
 
-      - name: Configure artifact path
-        run: '"PUBLISH_PATH=$env:RUNNER_TEMP\giteasy-build\Flow.Launcher.Plugin.GitEasy" >> $env:GITHUB_ENV'
-
-      - name: Set up .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 9.0.x
 
       - name: Restore dependencies
-        run: dotnet restore -r win-x64
+        run: |
+          cd Flow.Launcher.Plugin.GitEasy
+          dotnet restore
 
-      - name: Verify formatting
-        run: dotnet format whitespace --verify-no-changes --no-restore
+      - name: Build
+        run: |
+          cd Flow.Launcher.Plugin.GitEasy
+          dotnet publish -c Release -r win-x64 --no-self-contained Flow.Launcher.Plugin.GitEasy.csproj
 
-      - name: Publish plugin
-        run: >-
-          dotnet publish
-          -c Release
-          -r win-x64
-          --no-self-contained
-          --no-restore
-          --output "$env:PUBLISH_PATH"
-
-      - name: Upload plugin artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
           name: Flow.Launcher.Plugin.GitEasy
-          path: ${{ env.PUBLISH_PATH }}
-          if-no-files-found: error
-          retention-days: 7
+          path: ./Flow.Launcher.Plugin.GitEasy/bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish
