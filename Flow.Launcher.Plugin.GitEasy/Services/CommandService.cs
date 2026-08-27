@@ -15,9 +15,9 @@ public class CommandService : ICommandService
 
     public CommandService(IEnumerable<ICommand> commands, PluginInitContext context)
     {
-        foreach (ICommand c in commands)
+        foreach (ICommand command in commands)
         {
-            _commands.Add(c.Key, c);
+            _commands.Add(command.Key, command);
         }
 
         _context = context;
@@ -41,12 +41,12 @@ public class CommandService : ICommandService
                 cancellationToken);
         }
 
-        if (_commands.TryGetValue(args[0], out ICommand result))
+        if (_commands.TryGetValue(args[0], out ICommand command))
         {
             string commandQuery = args.Length > 1
                 ? string.Join(" ", args, 1, args.Length - 1)
                 : string.Empty;
-            List<Result> commandResults = await result.ResolveAsync(
+            List<Result> commandResults = await command.ResolveAsync(
                 commandQuery,
                 query.ActionKeyword,
                 cancellationToken);
@@ -69,13 +69,13 @@ public class CommandService : ICommandService
     {
         var results = new List<Result>(_commands.Count);
 
-        foreach (ICommand c in _commands.Values)
+        foreach (ICommand command in _commands.Values)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (string.IsNullOrEmpty(query)
-                || c.Key.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                || command.Key.StartsWith(query, StringComparison.OrdinalIgnoreCase))
             {
-                results.Add(PrepareCommandAutoCompleteResult(actionKeyword, c));
+                results.Add(PrepareCommandAutoCompleteResult(actionKeyword, command));
             }
         }
 

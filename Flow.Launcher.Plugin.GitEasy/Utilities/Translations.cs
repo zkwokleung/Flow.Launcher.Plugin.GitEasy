@@ -28,7 +28,7 @@ public static class Translations
     public const string QueryCloneStarted = "giteasy_query_clone_started";
     public const string QueryCloneStartedMsg = "giteasy_query_clone_started_msg";
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
-    public const string QueryClonseCompleteMsg = "giteasy_query_clone_complete_msg";
+    public const string QueryCloneCompleteMsg = "giteasy_query_clone_complete_msg";
 
     public const string QueryFetchStarted = "giteasy_query_fetch_started";
     public const string QueryFetchStartedMsg = "giteasy_query_fetch_started_msg";
