@@ -21,6 +21,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
     private ISettingsService _settingsService;
     private IDirectoryService _directoryService;
 
+    #region Flow.Launcher Interface Functions
     public Task InitAsync(PluginInitContext context)
     {
         ServiceProvider = new ServiceCollection()
@@ -39,6 +40,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
     public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        // Verify the repositories path before running any command
         IReadOnlyList<string> existingRoots = await _directoryService
             .GetExistingRepositoryRootsAsync(token);
 
@@ -126,4 +128,5 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
             _settingsService.GetSettings(),
             _settingsService.SaveSettings);
     }
+    #endregion
 }

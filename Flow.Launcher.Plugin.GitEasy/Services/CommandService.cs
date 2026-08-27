@@ -41,6 +41,7 @@ public class CommandService : ICommandService
                 cancellationToken);
         }
 
+        // Try to execute existing commands
         if (_commands.TryGetValue(args[0], out ICommand result))
         {
             string commandQuery = args.Length > 1
@@ -54,14 +55,17 @@ public class CommandService : ICommandService
             return commandResults;
         }
 
+        // Match possible commands
         List<Result> results = GetCommandCompletionResults(
             query.ActionKeyword,
             search,
             cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
+        // Return the results or return the invalid result
         return results.Count == 0 ? new() { GetInvalidResult() } : results;
     }
 
+    #region Private Functions
     private List<Result> GetCommandCompletionResults(
         string actionKeyword,
         string query,
@@ -112,4 +116,5 @@ public class CommandService : ICommandService
             IcoPath = Icons.Error
         };
     }
+    #endregion
 }
