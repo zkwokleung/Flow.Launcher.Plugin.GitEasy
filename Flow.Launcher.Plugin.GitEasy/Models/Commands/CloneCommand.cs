@@ -48,7 +48,6 @@ public class CloneCommand : ICommand
         switch (parsedQuery.Status)
         {
             case CloneQueryStatus.Hint:
-                // Display a hint result
                 return CompleteResolution(new()
                 {
                     new Result
@@ -86,7 +85,6 @@ public class CloneCommand : ICommand
 
         var settings = _settingsService.GetSettings();
         OpenOption defaultPostAction = settings.OpenReposIn;
-        // Determine repository root paths
         IReadOnlyList<string> repoRoots = await _directoryService
             .GetExistingRepositoryRootsAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
@@ -97,7 +95,6 @@ public class CloneCommand : ICommand
         {
             cancellationToken.ThrowIfCancellationRequested();
             string destinationPath = Path.Combine(root, location);
-            // Default clone (follow OpenReposIn setting)
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultClone)} {location} → {root}",
@@ -110,7 +107,6 @@ public class CloneCommand : ICommand
                     location,
                     defaultPostAction)
             });
-            // Clone and open Explorer
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer)} ({root})",
@@ -122,7 +118,6 @@ public class CloneCommand : ICommand
                     location,
                     OpenOption.FileExplorer)
             });
-            // Clone and open VSCode
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode)} ({root})",
@@ -134,7 +129,6 @@ public class CloneCommand : ICommand
                     location,
                     OpenOption.VSCode)
             });
-            // Clone and open in Cursor
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
@@ -151,7 +145,6 @@ public class CloneCommand : ICommand
         return CompleteResolution(results, cancellationToken);
     }
 
-    #region Private Functions
     private static List<Result> CompleteResolution(
         List<Result> results,
         CancellationToken cancellationToken)
@@ -301,5 +294,4 @@ public class CloneCommand : ICommand
             }
         };
     }
-    #endregion
 }
