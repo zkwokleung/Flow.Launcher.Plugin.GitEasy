@@ -1,4 +1,4 @@
-using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
 using System.Threading;
 using System.Threading.Tasks;

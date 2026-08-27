@@ -1,4 +1,4 @@
-namespace Flow.Launcher.Plugin.GitEasy.Utilities;
+﻿namespace Flow.Launcher.Plugin.GitEasy.Utilities;
 
 public static class Translations
 {

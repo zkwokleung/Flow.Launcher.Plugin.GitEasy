@@ -1,13 +1,13 @@
-using Flow.Launcher.Plugin.GitEasy.Models;
-using Flow.Launcher.Plugin.GitEasy.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.IO;
+﻿using System;
 using System.Linq;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Flow.Launcher.Plugin.GitEasy.Models;
+using System.Collections.ObjectModel;
+using Flow.Launcher.Plugin.GitEasy.Utilities;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
