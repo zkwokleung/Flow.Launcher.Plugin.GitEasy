@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public sealed class DirectoryService : IDirectoryService
+public class DirectoryService : IDirectoryService
 {
-    private readonly ISettingsService _settingsService;
+    private ISettingsService _settingsService;
     private readonly PluginInitContext _context;
 
     public DirectoryService(ISettingsService settingsService, PluginInitContext context)

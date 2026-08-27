@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public sealed class CommandService : ICommandService
+public class CommandService : ICommandService
 {
     private readonly Dictionary<string, ICommand> _commands = new(StringComparer.OrdinalIgnoreCase);
     private readonly PluginInitContext _context;

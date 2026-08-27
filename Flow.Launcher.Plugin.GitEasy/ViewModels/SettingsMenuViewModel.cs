@@ -13,9 +13,9 @@ using System.Windows.Threading;
 
 namespace Flow.Launcher.Plugin.GitEasy.ViewModels;
 
-public sealed class SettingsMenuViewModel : INotifyPropertyChanged
+public class SettingsMenuViewModel : INotifyPropertyChanged
 {
-    private readonly Settings _settings;
+    private Settings _settings;
     private readonly Action _saveSettings;
     private readonly Action<Exception> _handleSaveError;
     private readonly DispatcherTimer _saveTimer;
@@ -473,7 +473,7 @@ public sealed class SettingsMenuViewModel : INotifyPropertyChanged
             or RepositoryPathValidationState.Duplicate;
     }
 
-    private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

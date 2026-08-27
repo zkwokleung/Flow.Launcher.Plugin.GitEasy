@@ -13,7 +13,7 @@ public enum OpenOption
     Cursor,
 }
 
-public sealed class Settings
+public class Settings
 {
     private List<string> _reposPaths = new();
 

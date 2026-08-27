@@ -12,7 +12,7 @@ namespace Flow.Launcher.Plugin.GitEasy.Views;
 
 public partial class SettingsMenu : UserControl
 {
-    private readonly PluginInitContext _context;
+    private PluginInitContext _context;
     private readonly SettingsMenuViewModel _viewModel;
 
     public SettingsMenu(PluginInitContext context, Settings settings, Action saveSettings)

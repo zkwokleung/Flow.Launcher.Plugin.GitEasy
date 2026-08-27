@@ -16,11 +16,11 @@ public class CloneCommand : ICommand
     public string Title => _context.API.GetTranslation(Translations.QueryResultClone);
     public string Description => _context.API.GetTranslation(Translations.QueryResultCloneDesc);
 
-    private readonly PluginInitContext _context;
-    private readonly IGitCommandService _gitCommandService;
-    private readonly ISettingsService _settingsService;
+    private PluginInitContext _context;
+    private IGitCommandService _gitCommandService;
+    private ISettingsService _settingsService;
     private readonly IDirectoryService _directoryService;
-    private readonly ISystemCommandService _systemCommandService;
+    private ISystemCommandService _systemCommandService;
 
     public CloneCommand(
         PluginInitContext context,

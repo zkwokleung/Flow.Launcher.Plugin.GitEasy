@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public sealed class SystemCommandService : ISystemCommandService
+public class SystemCommandService : ISystemCommandService
 {
     private const string WslLegacyPrefix = @"\\wsl$\";
     private const string WslLocalhostPrefix = @"\\wsl.localhost\";
