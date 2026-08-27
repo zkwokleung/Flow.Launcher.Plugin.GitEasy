@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public class GitCommandService : IGitCommandService
+public sealed class GitCommandService : IGitCommandService
 {
     private static readonly TimeSpan CloneTimeout = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan FetchTimeout = TimeSpan.FromMinutes(10);

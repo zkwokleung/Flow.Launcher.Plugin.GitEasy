@@ -8,10 +8,10 @@ using System.Linq;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
-public class SettingsService : ISettingsService
+public sealed class SettingsService : ISettingsService
 {
-    private PluginInitContext _context;
-    private Settings _settings;
+    private readonly PluginInitContext _context;
+    private readonly Settings _settings;
 
     public SettingsService(PluginInitContext context)
     {
