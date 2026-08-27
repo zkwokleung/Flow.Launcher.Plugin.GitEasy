@@ -1,14 +1,14 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Views;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using Microsoft.Extensions.DependencyInjection;
 using Flow.Launcher.Plugin.GitEasy.Configurations;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
+using Flow.Launcher.Plugin.GitEasy.Views;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace Flow.Launcher.Plugin.GitEasy;
 
@@ -24,9 +24,9 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
     public Task InitAsync(PluginInitContext context)
     {
         ServiceProvider = new ServiceCollection()
-                                .InjectServices(context)
-                                .InjectCommands()
-                                .BuildServiceProvider();
+            .InjectServices(context)
+            .InjectCommands()
+            .BuildServiceProvider();
 
         _context = context;
         _commandService = ServiceProvider.GetService<ICommandService>();
