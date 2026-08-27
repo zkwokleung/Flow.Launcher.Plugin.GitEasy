@@ -13,18 +13,18 @@ namespace Flow.Launcher.Plugin.GitEasy.Views;
 public partial class SettingsMenu : UserControl
 {
     private PluginInitContext _context;
-    private readonly SettingsMenuViewModel _viewModel;
+    private readonly SettingsMenuViewModel _settingsPanelViewModel;
 
     public SettingsMenu(PluginInitContext context, Settings settings, Action saveSettings)
     {
         InitializeComponent();
         _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        _viewModel = new SettingsMenuViewModel(
+        _settingsPanelViewModel = new SettingsMenuViewModel(
             settings,
             saveSettings,
             ShowSaveError);
-        DataContext = _viewModel;
+        DataContext = _settingsPanelViewModel;
     }
 
     private void OnBtnBrowseReposPathClick(object sender, RoutedEventArgs e)
@@ -34,28 +34,28 @@ public partial class SettingsMenu : UserControl
             return;
         }
 
-        using var dialog = new FolderBrowserDialog();
+        using var fbd = new FolderBrowserDialog();
         if (Directory.Exists(row.Path))
         {
-            dialog.SelectedPath = row.Path;
+            fbd.SelectedPath = row.Path;
         }
 
-        if (dialog.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        if (fbd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
         {
-            _viewModel.UpdateRepositoryPath(row, dialog.SelectedPath);
+            _settingsPanelViewModel.UpdateRepositoryPath(row, fbd.SelectedPath);
         }
     }
 
     private void OnBtnAddReposPathClick(object sender, RoutedEventArgs e)
     {
-        _viewModel.AddRepositoryPath();
+        _settingsPanelViewModel.AddRepositoryPath();
     }
 
     private void OnBtnRemoveReposPathClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: RepositoryPathRowViewModel row })
         {
-            _viewModel.RemoveRepositoryPath(row);
+            _settingsPanelViewModel.RemoveRepositoryPath(row);
         }
     }
 
@@ -63,7 +63,7 @@ public partial class SettingsMenu : UserControl
     {
         if (sender is Button { DataContext: RepositoryPathRowViewModel row })
         {
-            _viewModel.MoveRepositoryPathUp(row);
+            _settingsPanelViewModel.MoveRepositoryPathUp(row);
         }
     }
 
@@ -71,33 +71,33 @@ public partial class SettingsMenu : UserControl
     {
         if (sender is Button { DataContext: RepositoryPathRowViewModel row })
         {
-            _viewModel.MoveRepositoryPathDown(row);
+            _settingsPanelViewModel.MoveRepositoryPathDown(row);
         }
     }
 
     private void OnBtnBrowseGitPathClick(object sender, RoutedEventArgs e)
     {
-        using var dialog = new OpenFileDialog
+        using var ofd = new OpenFileDialog
         {
             CheckFileExists = true,
             Filter = "Git executable (git.exe)|git.exe",
         };
 
-        if (File.Exists(_viewModel.GitPath))
+        if (File.Exists(_settingsPanelViewModel.GitPath))
         {
-            dialog.FileName = _viewModel.GitPath;
+            ofd.FileName = _settingsPanelViewModel.GitPath;
         }
 
-        if (dialog.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.FileName))
+        if (ofd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(ofd.FileName))
         {
-            _viewModel.GitPath = dialog.FileName;
-            _viewModel.CommitChanges();
+            _settingsPanelViewModel.GitPath = ofd.FileName;
+            _settingsPanelViewModel.CommitChanges();
         }
     }
 
     private async void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        await _viewModel.FlushPendingChangesAsync();
+        await _settingsPanelViewModel.FlushPendingChangesAsync();
     }
 
     private void ShowSaveError(Exception exception)

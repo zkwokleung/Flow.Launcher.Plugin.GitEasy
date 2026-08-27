@@ -17,14 +17,14 @@ public class GitCommandService : IGitCommandService
     private static readonly TimeSpan CloneTimeout = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan FetchTimeout = TimeSpan.FromMinutes(10);
 
-    private readonly ISettingsService _settingsService;
+    private readonly ISettingsService _settingService;
     private readonly IProcessRunner _processRunner;
 
     public GitCommandService(
         ISettingsService settingsService,
         IProcessRunner processRunner)
     {
-        _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _settingService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
@@ -84,7 +84,7 @@ public class GitCommandService : IGitCommandService
 
     private string GetGitPath()
     {
-        string gitPath = _settingsService.GetSettings().GitPath;
+        string gitPath = _settingService.GetSettings().GitPath;
         if (!File.Exists(gitPath))
         {
             throw new FileNotFoundException("Git executable was not found.", gitPath);
@@ -232,7 +232,7 @@ public class GitCommandService : IGitCommandService
         string destinationRoot,
         GitCloneCommandOptions options)
     {
-        bool isConfiguredRoot = _settingsService
+        bool isConfiguredRoot = _settingService
             .GetSettings()
             .ReposPaths
             .Any(configuredRoot =>

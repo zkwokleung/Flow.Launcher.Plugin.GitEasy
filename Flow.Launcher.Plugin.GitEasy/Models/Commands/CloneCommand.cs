@@ -218,7 +218,7 @@ public class CloneCommand : ICommand
         _context.API.ShowMsg(
             _context.API.GetTranslation(Translations.QueryCloneComplete),
             string.Format(
-                _context.API.GetTranslation(Translations.QueryCloneCompleteMsg),
+                _context.API.GetTranslation(Translations.QueryClonseCompleteMsg),
                 location),
             iconPath: Icons.Logo);
     }

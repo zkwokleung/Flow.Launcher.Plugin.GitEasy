@@ -90,7 +90,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
                         _context.API.GetTranslation(Translations.MsgFolderCreated),
                         repositoryPath));
                 }
-                catch (Exception exception)
+                catch (Exception ex)
                 {
                     string message = string.Format(
                         _context.API.GetTranslation(Translations.ErrorCreateFolderFailed),
@@ -98,7 +98,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
 
                     _context.API.ShowMsgError(
                         _context.API.GetTranslation(Translations.Error),
-                        $"{message}{Environment.NewLine}{exception.Message}");
+                        $"{message}{Environment.NewLine}{ex.Message}");
                 }
 
                 return true;
