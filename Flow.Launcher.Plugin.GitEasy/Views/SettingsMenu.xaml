@@ -9,7 +9,6 @@
     Unloaded="OnUnloaded">
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="70,0,20,20">
-            <!-- Main Settings -->
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition MinHeight="45" />
@@ -21,7 +20,6 @@
                     <ColumnDefinition Width="3*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <!-- Open cloned repo in -->
                 <Label Grid.Row="0"
                     Grid.Column="0"
                     Margin="0,0,10,0"
@@ -39,7 +37,6 @@
                     AutomationProperties.Name="{DynamicResource giteasy_settings_open_repos_in}"
                     ItemsSource="{Binding OpenReposInOptions}"
                     SelectedItem="{Binding SelectedOpenReposIn, Mode=TwoWay}" />
-                <!-- Git path -->
                 <Label Grid.Row="1"
                     Grid.Column="0"
                     Margin="0,0,10,0"
@@ -84,7 +81,6 @@
                     </TextBlock.Style>
                 </TextBlock>
             </Grid>
-            <!-- Repositories Paths Settings -->
             <TextBlock Margin="0,14,0,4"
                 FontSize="16"
                 FontWeight="SemiBold"
