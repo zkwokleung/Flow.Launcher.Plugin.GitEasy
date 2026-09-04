@@ -1,7 +1,6 @@
 ﻿using Flow.Launcher.Plugin.GitEasy.Views;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -9,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Flow.Launcher.Plugin.GitEasy.Configurations;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
+using System.Linq;
 
 namespace Flow.Launcher.Plugin.GitEasy;
 
@@ -22,7 +22,7 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
     private IDirectoryService _directoryService;
 
     #region Flow.Launcher Interface Functions
-    public async Task InitAsync(PluginInitContext context)
+    public Task InitAsync(PluginInitContext context)
     {
         ServiceProvider = new ServiceCollection()
                                 .InjectServices(context)
@@ -33,52 +33,82 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
         _commandService = ServiceProvider.GetService<ICommandService>();
         _settingsService = ServiceProvider.GetService<ISettingsService>();
         _directoryService = ServiceProvider.GetService<IDirectoryService>();
+
+        return Task.CompletedTask;
     }
 
     public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
     {
+        token.ThrowIfCancellationRequested();
         // Verify the repositories path before running any command
-        if (!_directoryService.VerifyRepositoriesPath())
+        IReadOnlyList<string> existingRoots = await _directoryService
+            .GetExistingRepositoryRootsAsync(token);
+
+        if (existingRoots.Count > 0)
         {
-            return new()
-            {
-                new Result
-                {
-                    Title = _context.API.GetTranslation(Translations.ErrorInvalidReposPath),
-                    SubTitle = _context.API.GetTranslation(Translations.QueryOpenSettings),
-                    IcoPath = Icons.Error,
-                    Score = 1000,
-                    Action = _ =>
-                    {
-                        _context.API.OpenSettingDialog();
-                        return true;
-                    }
-                },
-                new Result
-                {
-                    Title = string.Format(_context.API.GetTranslation(Translations.QueryCreateFolder), _settingsService.GetSettingsOrDefault().ReposPath),
-                    IcoPath = Icons.Explorer,
-                    Action = _ =>
-                    {
-                        try
-                        {
-                            _directoryService.CreateRepositoriesDirectory();
-                            _context.API.ShowMsg(string.Format(_context.API.GetTranslation(Translations.MsgFolderCreated),_settingsService.GetSettingsOrDefault().ReposPath));
-                        }
-                        catch (Exception ex)
-                        {
-                            _context.API.ShowMsgError(
-                                string.Format($"{_context.API.GetTranslation(Translations.Error)}: {_context.API.GetTranslation(Translations.ErrorCreateFolderFailed)}"),
-                                ex.Message
-                            );
-                        }
-                        return true;
-                    }
-                }
-            };
+            return await _commandService.ResolveAsync(query, token);
         }
 
-        return await _commandService.Resolve(query);
+        token.ThrowIfCancellationRequested();
+
+        var results = new List<Result>
+        {
+            new()
+            {
+                Title = _context.API.GetTranslation(Translations.ErrorInvalidReposPath),
+                SubTitle = _context.API.GetTranslation(Translations.QueryOpenSettings),
+                IcoPath = Icons.Error,
+                Score = 1000,
+                Action = _ =>
+                {
+                    _context.API.OpenSettingDialog();
+                    return true;
+                },
+            },
+        };
+
+        string repositoryPath = _settingsService.GetSettings()
+            .ReposPaths
+            .FirstOrDefault();
+
+        if (repositoryPath == null)
+        {
+            token.ThrowIfCancellationRequested();
+            return results;
+        }
+
+        results.Add(new Result
+        {
+            Title = string.Format(
+                _context.API.GetTranslation(Translations.QueryCreateFolder),
+                repositoryPath),
+            IcoPath = Icons.Explorer,
+            Action = _ =>
+            {
+                try
+                {
+                    _directoryService.CreateDirectory(repositoryPath);
+                    _context.API.ShowMsg(string.Format(
+                        _context.API.GetTranslation(Translations.MsgFolderCreated),
+                        repositoryPath));
+                }
+                catch (Exception ex)
+                {
+                    string message = string.Format(
+                        _context.API.GetTranslation(Translations.ErrorCreateFolderFailed),
+                        repositoryPath);
+
+                    _context.API.ShowMsgError(
+                        _context.API.GetTranslation(Translations.Error),
+                        $"{message}{Environment.NewLine}{ex.Message}");
+                }
+
+                return true;
+            },
+        });
+
+        token.ThrowIfCancellationRequested();
+        return results;
     }
 
     public string GetTranslatedPluginTitle()
@@ -91,14 +121,12 @@ public partial class Main : ISettingProvider, IAsyncPlugin, IPluginI18n
         return _context.API.GetTranslation(Translations.PluginDesc);
     }
 
-    public static void StartProcess(Func<ProcessStartInfo, Process> runProcess, ProcessStartInfo info)
-    {
-
-    }
-
     public Control CreateSettingPanel()
     {
-        return new SettingsMenu(_context, _settingsService.GetSettingsOrDefault());
+        return new SettingsMenu(
+            _context,
+            _settingsService.GetSettings(),
+            _settingsService.SaveSettings);
     }
     #endregion
 }

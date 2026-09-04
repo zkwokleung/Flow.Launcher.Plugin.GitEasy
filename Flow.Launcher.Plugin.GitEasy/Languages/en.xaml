@@ -28,21 +28,38 @@
     <system:String x:Key="giteasy_query_result_fetch_msg">Fetch {0}</system:String>
 
     <!--  Messages -->
-    <system:String x:Key="giteasy_query_clone_complete">Clone Finished</system:String>
-    <system:String x:Key="giteasy_query_clone_complete_msg">Finished Cloning</system:String>
+    <system:String x:Key="giteasy_query_clone_started">Clone started</system:String>
+    <system:String x:Key="giteasy_query_clone_started_msg">Cloning {0} to {1} in the background.</system:String>
+    <system:String x:Key="giteasy_query_clone_complete">Clone completed</system:String>
+    <system:String x:Key="giteasy_query_clone_complete_msg">{0} was cloned successfully.</system:String>
 
-    <system:String x:Key="giteasy_query_fetch_complete">Fetch Completed</system:String>
-    <system:String x:Key="giteasy_query_fetch_complete_msg">{0} is fetched.</system:String>
+    <system:String x:Key="giteasy_query_fetch_started">Fetch started</system:String>
+    <system:String x:Key="giteasy_query_fetch_started_msg">Fetching {0} in the background.</system:String>
+    <system:String x:Key="giteasy_query_fetch_complete">Fetch completed</system:String>
+    <system:String x:Key="giteasy_query_fetch_complete_msg">{0} was fetched successfully.</system:String>
     
     <system:String x:Key="giteasy_query_open_settings">Open plugin settings</system:String>
     <system:String x:Key="giteasy_query_create_folder">Create the folder {0}</system:String>
     <system:String x:Key="giteasy_msg_folder_created">Folder created at {0}.</system:String>
 
     <!--  Program setting  -->
-    <system:String x:Key="giteasy_settings_repositories_path">Repositories Path</system:String>
-    <system:String x:Key="giteasy_settings_repositories_path_description">The default clone destination folder.</system:String>
+    <system:String x:Key="giteasy_settings_repositories_path">Repository Folders</system:String>
+    <system:String x:Key="giteasy_settings_repositories_path_description">Folders searched for repositories and offered as clone destinations. The first folder is primary.</system:String>
+    <system:String x:Key="giteasy_settings_repository_path">Repository folder</system:String>
+    <system:String x:Key="giteasy_settings_repository_path_required">Enter a repository folder or remove this row.</system:String>
+    <system:String x:Key="giteasy_settings_repository_path_invalid">Enter a valid absolute folder path.</system:String>
+    <system:String x:Key="giteasy_settings_repository_path_is_file">This path points to a file, not a folder.</system:String>
+    <system:String x:Key="giteasy_settings_repository_path_duplicate">This folder is already listed.</system:String>
+    <system:String x:Key="giteasy_settings_repository_path_unavailable">This folder is currently unavailable. It will remain saved and can be created later.</system:String>
+    <system:String x:Key="giteasy_settings_add_repository">Add folder</system:String>
+    <system:String x:Key="giteasy_settings_browse_repository">Browse for repository folder</system:String>
+    <system:String x:Key="giteasy_settings_move_repository_up">Move repository folder up</system:String>
+    <system:String x:Key="giteasy_settings_move_repository_down">Move repository folder down</system:String>
+    <system:String x:Key="giteasy_settings_remove_repository">Remove repository folder</system:String>
     <system:String x:Key="giteasy_settings_git_path">Git Path</system:String>
-    <system:String x:Key="giteasy_settings_git_path_description">The folder containing the git executable.</system:String>
+    <system:String x:Key="giteasy_settings_git_path_description">The full path to git.exe.</system:String>
+    <system:String x:Key="giteasy_settings_git_path_invalid">Select an existing git.exe file.</system:String>
+    <system:String x:Key="giteasy_settings_browse_git">Browse for git.exe</system:String>
     <system:String x:Key="giteasy_settings_browse">Browse</system:String>
     <system:String x:Key="giteasy_settings_open_repos_in">Open Repository In</system:String>
 
@@ -53,5 +70,10 @@
     <system:String x:Key="giteasy_error_invalid_cmd_msg">Please double check your command.</system:String>
     <system:String x:Key="giteasy_error_invalid_repos_path">Invalid repositories path. Please specify it in the plugin setting.</system:String>
 
-    <system:String x:Key="giteasy_error_fetch_msg">Error fetching {0}</system:String>
+    <system:String x:Key="giteasy_error_clone_msg">Failed to clone {0}.</system:String>
+    <system:String x:Key="giteasy_error_fetch_msg">Failed to fetch {0}.</system:String>
+    <system:String x:Key="giteasy_error_clone_timeout">Cloning timed out. A partial folder may remain at {0}.</system:String>
+    <system:String x:Key="giteasy_error_fetch_timeout">Fetching {0} timed out.</system:String>
+    <system:String x:Key="giteasy_error_git_exit_code">Git exited with code {0}.</system:String>
+    <system:String x:Key="giteasy_error_open_repository">Failed to open the repository at {0}.</system:String>
 </ResourceDictionary>

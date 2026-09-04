@@ -3,130 +3,215 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Flow.Launcher.Plugin.GitEasy.Views"
     xmlns:viewmodels="clr-namespace:Flow.Launcher.Plugin.GitEasy.ViewModels"
     d:DataContext="{d:DesignInstance Type=viewmodels:SettingsMenuViewModel}"
-    mc:Ignorable="d">
-    <DockPanel Margin="70,0,20,0"
-        HorizontalAlignment="Stretch">
-        <StackPanel>
+    mc:Ignorable="d"
+    Unloaded="OnUnloaded">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="70,0,20,20">
             <!-- Main Settings -->
-            <Grid Margin="0">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition MinHeight="45" />
                     <RowDefinition MinHeight="45" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.5*" />
                     <ColumnDefinition Width="3*" />
-                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <!-- Open cloned repo in -->
-                <Label x:Name="lblOpenClonedReposIn"
-                    Grid.Row="0"
+                <Label Grid.Row="0"
                     Grid.Column="0"
+                    Margin="0,0,10,0"
                     VerticalAlignment="Center"
-                    FontSize="16"
-                    MinWidth="120"
                     Content="{DynamicResource giteasy_settings_open_repos_in}"
-                    Height="25"
-                    Margin="0,0,10,0" />
+                    FontSize="16"
+                    Target="{Binding ElementName=cbOpenReposIn}" />
                 <ComboBox x:Name="cbOpenReposIn"
                     Grid.Row="0"
                     Grid.Column="1"
-                    Width="120"
-                    SelectedIndex="{Binding SelectedOpenReposInIndex}"
-                    Margin="10,0,10,0"
-                    VerticalAlignment="Center" />
+                    Width="160"
+                    Margin="10,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{DynamicResource giteasy_settings_open_repos_in}"
+                    ItemsSource="{Binding OpenReposInOptions}"
+                    SelectedItem="{Binding SelectedOpenReposIn, Mode=TwoWay}" />
                 <!-- Git path -->
-                <Label x:Name="lblGitPath"
-                    Grid.Row="1"
+                <Label Grid.Row="1"
                     Grid.Column="0"
-                    Content="{DynamicResource giteasy_settings_git_path}"
                     Margin="0,0,10,0"
                     VerticalAlignment="Center"
+                    Content="{DynamicResource giteasy_settings_git_path}"
                     FontSize="16"
-                    MinWidth="120"
-                    Height="25" />
+                    Target="{Binding ElementName=tbGitPath}" />
                 <TextBox x:Name="tbGitPath"
                     Grid.Row="1"
                     Grid.Column="1"
-                    Margin="10,14,10,14"
-                    TextWrapping="Wrap"
-                    Text="{Binding GitPath}"
-                    ToolTip="{DynamicResource giteasy_settings_git_path_textbox_placeholder}"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    MinWidth="120"
-                    Height="25" />
-                <Button x:Name="btnBrowseGit"
-                    Grid.Row="1"
+                    Height="28"
+                    MinWidth="220"
+                    Margin="10,8"
+                    VerticalContentAlignment="Center"
+                    AutomationProperties.HelpText="{DynamicResource giteasy_settings_git_path_description}"
+                    AutomationProperties.Name="{DynamicResource giteasy_settings_git_path}"
+                    FontSize="15"
+                    Text="{Binding GitPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ToolTip="{DynamicResource giteasy_settings_git_path_description}" />
+                <Button Grid.Row="1"
                     Grid.Column="2"
-                    Content="..."
+                    MinWidth="72"
                     Margin="10,0,0,0"
                     VerticalAlignment="Center"
-                    FontSize="16"
-                    MinWidth="60"
-                    Click="OnBtnBrowseGitPathClick" />
+                    AutomationProperties.Name="{DynamicResource giteasy_settings_browse_git}"
+                    Click="OnBtnBrowseGitPathClick"
+                    Content="{DynamicResource giteasy_settings_browse}" />
+                <TextBlock Grid.Row="2"
+                    Grid.Column="1"
+                    Margin="10,0,10,6"
+                    Text="{DynamicResource giteasy_settings_git_path_invalid}"
+                    TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasGitPathError}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </Grid>
             <!-- Repositories Paths Settings -->
-            <StackPanel>
-                <Label Content="Repository Paths"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Margin="0,10,0,5" />
-                <ListBox x:Name="lbxReposPaths"
-                    Margin="0"
-                    ItemsSource="{Binding ReposPaths}"
-                    HorizontalContentAlignment="Stretch">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,2" VerticalAlignment="Center">
+            <TextBlock Margin="0,14,0,4"
+                FontSize="16"
+                FontWeight="SemiBold"
+                Text="{DynamicResource giteasy_settings_repositories_path}" />
+            <TextBlock Margin="0,0,0,8"
+                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                Text="{DynamicResource giteasy_settings_repositories_path_description}"
+                TextWrapping="Wrap" />
+            <ScrollViewer MaxHeight="320"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding RepositoryPaths}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type viewmodels:RepositoryPathRowViewModel}">
+                            <Grid Margin="0,3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="3*" />
-                                    <ColumnDefinition Width="1.5*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0"
-                                    Tag="{Binding}"
-                                    Click="OnBtnRemoveReposPathClick"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="9"
-                                    Width="25"
-                                    Height="25"
-                                    Content="✕" />
-                                <TextBox Grid.Column="1"
-                                    Margin="10,5,10,5"
-                                    TextWrapping="Wrap"
-                                    Text="{Binding Path=., Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ToolTip="{DynamicResource giteasy_settings_repositories_path_textbox_placeholder}"
-                                    VerticalAlignment="Center"
-                                    FontSize="16"
-                                    MinWidth="120"
-                                    Height="25" />
-                                <Button Grid.Column="2"
-                                    Content="..."
-                                    Tag="{Binding}"
+                                <TextBox Grid.Row="0"
+                                    Grid.Column="0"
+                                    MinWidth="220"
+                                    Margin="0,0,8,0"
+                                    Padding="4,2"
+                                    VerticalContentAlignment="Center"
+                                    AutomationProperties.HelpText="{DynamicResource giteasy_settings_repositories_path_description}"
+                                    AutomationProperties.Name="{DynamicResource giteasy_settings_repository_path}"
+                                    FontSize="15"
+                                    Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ToolTip="{DynamicResource giteasy_settings_repositories_path_description}" />
+                                <Button Grid.Row="0"
+                                    Grid.Column="1"
+                                    MinWidth="72"
+                                    Margin="0,0,6,0"
+                                    AutomationProperties.Name="{DynamicResource giteasy_settings_browse_repository}"
                                     Click="OnBtnBrowseReposPathClick"
-                                    Margin="10,0,0,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="16"
-                                    MinWidth="60" />
+                                    Content="{DynamicResource giteasy_settings_browse}" />
+                                <Button Grid.Row="0"
+                                    Grid.Column="2"
+                                    Width="30"
+                                    Margin="0,0,4,0"
+                                    AutomationProperties.Name="{DynamicResource giteasy_settings_move_repository_up}"
+                                    Click="OnBtnMoveReposPathUpClick"
+                                    Content="↑"
+                                    IsEnabled="{Binding CanMoveUp}"
+                                    ToolTip="{DynamicResource giteasy_settings_move_repository_up}" />
+                                <Button x:Name="btnMoveReposPathDown"
+                                    Grid.Row="0"
+                                    Grid.Column="3"
+                                    Width="30"
+                                    Margin="0,0,4,0"
+                                    AutomationProperties.Name="{DynamicResource giteasy_settings_move_repository_down}"
+                                    Click="OnBtnMoveReposPathDownClick"
+                                    Content="↓"
+                                    IsEnabled="{Binding CanMoveDown}"
+                                    ToolTip="{DynamicResource giteasy_settings_move_repository_down}" />
+                                <Button Grid.Row="0"
+                                    Grid.Column="4"
+                                    Height="{Binding ActualHeight, ElementName=btnMoveReposPathDown}"
+                                    Width="30"
+                                    Padding="0"
+                                    AutomationProperties.Name="{DynamicResource giteasy_settings_remove_repository}"
+                                    Click="OnBtnRemoveReposPathClick"
+                                    ToolTip="{DynamicResource giteasy_settings_remove_repository}">
+                                    <Viewbox Width="12" Height="14">
+                                        <Path Data="M 1,3 L 11,3 M 4,3 L 4,1 L 8,1 L 8,3 M 2,3 L 3,13 L 9,13 L 10,3 M 5,5 L 5,11 M 7,5 L 7,11"
+                                            Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                                            StrokeEndLineCap="Round"
+                                            StrokeLineJoin="Round"
+                                            StrokeStartLineCap="Round"
+                                            StrokeThickness="1.25" />
+                                    </Viewbox>
+                                </Button>
+                                <TextBlock Grid.Row="1"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="5"
+                                    Margin="4,3,0,2"
+                                    TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{DynamicResource giteasy_settings_repository_path_required}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ValidationState}"
+                                                    Value="{x:Static viewmodels:RepositoryPathValidationState.Valid}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ValidationState}"
+                                                    Value="{x:Static viewmodels:RepositoryPathValidationState.Invalid}">
+                                                    <Setter Property="Text" Value="{DynamicResource giteasy_settings_repository_path_invalid}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ValidationState}"
+                                                    Value="{x:Static viewmodels:RepositoryPathValidationState.File}">
+                                                    <Setter Property="Text" Value="{DynamicResource giteasy_settings_repository_path_is_file}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ValidationState}"
+                                                    Value="{x:Static viewmodels:RepositoryPathValidationState.Duplicate}">
+                                                    <Setter Property="Text" Value="{DynamicResource giteasy_settings_repository_path_duplicate}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ValidationState}"
+                                                    Value="{x:Static viewmodels:RepositoryPathValidationState.Unavailable}">
+                                                    <Setter Property="Foreground"
+                                                        Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                                                    <Setter Property="Text"
+                                                        Value="{DynamicResource giteasy_settings_repository_path_unavailable}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <Grid Margin="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <Button Content="Add"
-                        Click="OnBtnAddReposPathClick"
-                        Grid.Column="1" />
-                </Grid>
-            </StackPanel>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <Button MinWidth="100"
+                Margin="0,10,0,0"
+                HorizontalAlignment="Right"
+                AutomationProperties.Name="{DynamicResource giteasy_settings_add_repository}"
+                Click="OnBtnAddReposPathClick"
+                Content="{DynamicResource giteasy_settings_add_repository}" />
         </StackPanel>
-    </DockPanel>
+    </ScrollViewer>
 </UserControl>

@@ -1,97 +1,287 @@
-using Flow.Launcher.Plugin.GitEasy.Models.Commands.EventArgs;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
+using Flow.Launcher.Plugin.GitEasy.Models.Processes;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Utilities;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services;
 
 public class GitCommandService : IGitCommandService
 {
+    private static readonly TimeSpan CloneTimeout = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan FetchTimeout = TimeSpan.FromMinutes(10);
 
     private readonly ISettingsService _settingService;
+    private readonly IProcessRunner _processRunner;
 
-    public GitCommandService(ISettingsService settingsService)
+    public GitCommandService(
+        ISettingsService settingsService,
+        IProcessRunner processRunner)
     {
-        _settingService = settingsService;
+        _settingService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
-    public void CloneRepos(GitCloneCommandOptions options, Action OnCompleted = null)
+    public async Task<GitCommandResult> CloneRepositoryAsync(
+        GitCloneCommandOptions options,
+        CancellationToken cancellationToken)
     {
+        ProcessStartInfo startInfo = CreateGitCloneProcessStartInfo(options);
+        return await RunGitCommandAsync(
+            startInfo,
+            CloneTimeout,
+            "Git clone timed out.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<GitCommandResult> FetchRepositoryAsync(
+        string repositoryPath,
+        CancellationToken cancellationToken)
+    {
+        ProcessStartInfo startInfo = CreateGitFetchProcessStartInfo(repositoryPath);
+        return await RunGitCommandAsync(
+            startInfo,
+            FetchTimeout,
+            "Git fetch timed out.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<GitCommandResult> RunGitCommandAsync(
+        ProcessStartInfo startInfo,
+        TimeSpan timeout,
+        string timeoutMessage,
+        CancellationToken cancellationToken)
+    {
+        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout);
+        using CancellationTokenSource linkedCancellationTokenSource =
+            CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                timeoutCancellationTokenSource.Token);
+
+        try
+        {
+            ProcessExecutionResult result = await _processRunner
+                .RunAsync(startInfo, linkedCancellationTokenSource.Token)
+                .ConfigureAwait(false);
+            return ToGitCommandResult(result);
+        }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            RethrowCallerCancellation(exception, cancellationToken);
+            throw;
+        }
+        catch (OperationCanceledException exception) when (timeoutCancellationTokenSource.IsCancellationRequested)
+        {
+            throw new TimeoutException(timeoutMessage, exception);
+        }
+    }
+
+    private string GetGitPath()
+    {
+        string gitPath = _settingService.GetSettings().GitPath;
+        if (!File.Exists(gitPath))
+        {
+            throw new FileNotFoundException("Git executable was not found.", gitPath);
+        }
+
+        return gitPath;
+    }
+
+    private ProcessStartInfo CreateGitCloneProcessStartInfo(GitCloneCommandOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
         if (string.IsNullOrWhiteSpace(options.Repo))
         {
-            throw new ArgumentException("Repo can not be null or empty");
+            throw new ArgumentException("Repository URL cannot be empty.", nameof(options));
         }
 
-        var gitPath = _settingService.GetSettingsOrDefault().GitPath;
-        if (!File.Exists(gitPath))
+        if (options.Arguments is null)
         {
-            throw new Exception("git.exe not found");
+            throw new ArgumentException("Clone arguments cannot be null.", nameof(options));
         }
 
-        Process.Start(PrepareGitCloneProcessStartInfo(options, gitPath)).WaitForExit();
+        if (string.IsNullOrWhiteSpace(options.DestinationPath))
+        {
+            throw new ArgumentException("Destination path cannot be empty.", nameof(options));
+        }
 
-        OnCompleted?.Invoke();
+        string unnormalizedDestinationPath = Path.TrimEndingDirectorySeparator(options.DestinationPath);
+        string repositoryName = Path.GetFileName(unnormalizedDestinationPath);
+        if (!WindowsFileNameValidator.IsValidLeafName(repositoryName))
+        {
+            throw new ArgumentException("Destination path must end with a valid Windows directory name.", nameof(options));
+        }
+
+        string unnormalizedDestinationRoot = Path.GetDirectoryName(unnormalizedDestinationPath);
+        string destinationRoot = Path.GetFullPath(
+            string.IsNullOrEmpty(unnormalizedDestinationRoot)
+                ? Directory.GetCurrentDirectory()
+                : unnormalizedDestinationRoot);
+        string destinationPath = Path.GetFullPath(unnormalizedDestinationPath);
+
+        EnsureStrictChildPath(destinationRoot, destinationPath, options);
+        EnsureConfiguredRepositoryRoot(destinationRoot, options);
+
+        if (!Directory.Exists(destinationRoot))
+        {
+            throw new DirectoryNotFoundException($"Repository root does not exist: {destinationRoot}");
+        }
+
+        if (File.Exists(destinationPath))
+        {
+            throw new IOException($"Clone destination is an existing file: {destinationPath}");
+        }
+
+        if (Directory.Exists(destinationPath))
+        {
+            if ((File.GetAttributes(destinationPath) & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new IOException($"Clone destination cannot be a reparse point: {destinationPath}");
+            }
+
+            if (Directory.EnumerateFileSystemEntries(destinationPath).Any())
+            {
+                throw new IOException($"Clone destination is not empty: {destinationPath}");
+            }
+        }
+
+        return PrepareGitCloneProcessStartInfo(
+            options,
+            GetGitPath(),
+            destinationPath,
+            destinationRoot);
     }
 
-    public void FetchRepos(GitFetchCommandOptions options, Action<GitFetchCompletedEventArgs> OnCompleted = null)
+    private ProcessStartInfo CreateGitFetchProcessStartInfo(string repositoryPath)
     {
-        if (string.IsNullOrWhiteSpace(options.RepoPath))
+        if (string.IsNullOrWhiteSpace(repositoryPath))
         {
-            throw new ArgumentException("Repo can not be null or empty");
+            throw new ArgumentException("Repository path cannot be empty.", nameof(repositoryPath));
         }
 
-        var gitPath = _settingService.GetSettingsOrDefault().GitPath;
-        if (!File.Exists(gitPath))
-        {
-            throw new Exception("git.exe not found");
-        }
-
-        Process p = new()
-        {
-            StartInfo = PrepareGitFetchProcessStartInfo(options, gitPath)
-        };
-        p.Start();
-        p.WaitForExit();
-        OnCompleted?.Invoke(new()
-        {
-            ExitCode = p.ExitCode,
-        });
+        return PrepareGitFetchProcessStartInfo(repositoryPath, GetGitPath());
     }
 
-    private static ProcessStartInfo PrepareGitCloneProcessStartInfo(GitCloneCommandOptions options, string gitPath="git.exe")
+    private static ProcessStartInfo PrepareGitCloneProcessStartInfo(
+        GitCloneCommandOptions options,
+        string gitPath,
+        string destinationPath,
+        string destinationRoot)
     {
         ProcessStartInfo info = new()
         {
             FileName = gitPath,
-            WorkingDirectory = options.DestinationFolder
+            WorkingDirectory = destinationRoot,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
         };
 
         info.ArgumentList.Add("clone");
 
-        if (string.IsNullOrWhiteSpace(options.Options))
+        foreach (string argument in options.Arguments)
         {
-            info.ArgumentList.Add(options.Options);
+            if (string.IsNullOrWhiteSpace(argument) || argument == "--")
+            {
+                throw new ArgumentException(
+                    "Clone arguments cannot be empty or contain the end-of-options delimiter.",
+                    nameof(options));
+            }
+
+            info.ArgumentList.Add(argument);
         }
 
+        info.ArgumentList.Add("--");
         info.ArgumentList.Add(options.Repo);
+        info.ArgumentList.Add(destinationPath);
+        info.Environment["GIT_TERMINAL_PROMPT"] = "0";
 
         return info;
     }
 
-    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(GitFetchCommandOptions options, string gitPath = "git.exe")
+    private static void EnsureStrictChildPath(
+        string parentPath,
+        string childPath,
+        GitCloneCommandOptions options)
+    {
+        string relativePath = Path.GetRelativePath(parentPath, childPath);
+        bool escapesParent = relativePath.Equals("..", StringComparison.Ordinal)
+            || relativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            || relativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal);
+
+        if (relativePath.Equals(".", StringComparison.Ordinal)
+            || Path.IsPathRooted(relativePath)
+            || relativePath.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0
+            || escapesParent)
+        {
+            throw new ArgumentException(
+                "Clone destination must be a child of its repository root.",
+                nameof(options));
+        }
+    }
+
+    private void EnsureConfiguredRepositoryRoot(
+        string destinationRoot,
+        GitCloneCommandOptions options)
+    {
+        bool isConfiguredRoot = _settingService
+            .GetSettings()
+            .ReposPaths
+            .Any(configuredRoot =>
+                RepositoryPathNormalizer.TryNormalize(configuredRoot, out string normalizedRoot)
+                && RepositoryPathNormalizer.AreEquivalent(normalizedRoot, destinationRoot));
+
+        if (!isConfiguredRoot)
+        {
+            throw new ArgumentException(
+                "Clone destination must be inside a configured repository root.",
+                nameof(options));
+        }
+    }
+
+    private static ProcessStartInfo PrepareGitFetchProcessStartInfo(
+        string repositoryPath,
+        string gitPath)
     {
         ProcessStartInfo info = new()
         {
             FileName = gitPath,
-            WorkingDirectory = options.RepoPath,
-            CreateNoWindow = true
+            WorkingDirectory = repositoryPath,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
         };
 
         info.ArgumentList.Add("fetch");
+        info.Environment["GIT_TERMINAL_PROMPT"] = "0";
 
         return info;
     }
 
+    private static GitCommandResult ToGitCommandResult(ProcessExecutionResult result)
+    {
+        return new GitCommandResult(
+            result.ExitCode,
+            result.StandardOutput,
+            result.StandardError);
+    }
+
+    private static void RethrowCallerCancellation(
+        OperationCanceledException exception,
+        CancellationToken cancellationToken)
+    {
+        if (exception.CancellationToken != cancellationToken)
+        {
+            throw new OperationCanceledException(exception.Message, exception, cancellationToken);
+        }
+    }
 }

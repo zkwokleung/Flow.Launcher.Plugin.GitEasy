@@ -1,69 +1,109 @@
 ﻿using Flow.Launcher.Plugin.GitEasy.Models;
+using Flow.Launcher.Plugin.GitEasy.Utilities;
 using Flow.Launcher.Plugin.GitEasy.ViewModels;
 using System;
-using System.Linq;
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
+using Button = System.Windows.Controls.Button;
 using UserControl = System.Windows.Controls.UserControl;
 
 namespace Flow.Launcher.Plugin.GitEasy.Views;
 
-/// <summary>
-/// Interaction logic for SettingPanel.xaml
-/// </summary>
 public partial class SettingsMenu : UserControl
 {
     private PluginInitContext _context;
-    private Settings _settings;
-    private SettingsMenuViewModel _settingsPanelViewModel => DataContext as SettingsMenuViewModel;
+    private readonly SettingsMenuViewModel _settingsPanelViewModel;
 
-    public SettingsMenu(PluginInitContext context, Settings settings)
+    public SettingsMenu(PluginInitContext context, Settings settings, Action saveSettings)
     {
         InitializeComponent();
-        _context = context;
-        _settings = settings;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
 
-        DataContext = new SettingsMenuViewModel(_settings);
-
-        cbOpenReposIn.ItemsSource = Enum.GetValues(typeof(OpenOption)).Cast<OpenOption>();
+        _settingsPanelViewModel = new SettingsMenuViewModel(
+            settings,
+            saveSettings,
+            ShowSaveError);
+        DataContext = _settingsPanelViewModel;
     }
 
     private void OnBtnBrowseReposPathClick(object sender, RoutedEventArgs e)
     {
-        using FolderBrowserDialog fbd = new();
-        DialogResult result = fbd.ShowDialog();
-
-        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+        if (sender is not Button { DataContext: RepositoryPathRowViewModel row })
         {
-            if (sender is System.Windows.Controls.Button btn && btn.Tag is string oldPath)
-            {
-                _settingsPanelViewModel.UpdateRepoPath(oldPath, fbd.SelectedPath);
-            }
+            return;
+        }
+
+        using var fbd = new FolderBrowserDialog();
+        if (Directory.Exists(row.Path))
+        {
+            fbd.SelectedPath = row.Path;
+        }
+
+        if (fbd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+        {
+            _settingsPanelViewModel.UpdateRepositoryPath(row, fbd.SelectedPath);
         }
     }
 
     private void OnBtnAddReposPathClick(object sender, RoutedEventArgs e)
     {
-        _settingsPanelViewModel.AddRepoPath();
+        _settingsPanelViewModel.AddRepositoryPath();
     }
 
     private void OnBtnRemoveReposPathClick(object sender, RoutedEventArgs e)
     {
-        if(sender is System.Windows.Controls.Button btn && btn.Tag is string path)
+        if (sender is Button { DataContext: RepositoryPathRowViewModel row })
         {
-            _settingsPanelViewModel.RemoveRepoPath(path);
+            _settingsPanelViewModel.RemoveRepositoryPath(row);
+        }
+    }
+
+    private void OnBtnMoveReposPathUpClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: RepositoryPathRowViewModel row })
+        {
+            _settingsPanelViewModel.MoveRepositoryPathUp(row);
+        }
+    }
+
+    private void OnBtnMoveReposPathDownClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: RepositoryPathRowViewModel row })
+        {
+            _settingsPanelViewModel.MoveRepositoryPathDown(row);
         }
     }
 
     private void OnBtnBrowseGitPathClick(object sender, RoutedEventArgs e)
     {
-        const string filter = "git.exe | git.exe";
-        var ofd = new OpenFileDialog { Filter = filter };
-        var result = ofd.ShowDialog();
+        using var ofd = new OpenFileDialog
+        {
+            CheckFileExists = true,
+            Filter = "Git executable (git.exe)|git.exe",
+        };
 
-        if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(ofd.FileName))
+        if (File.Exists(_settingsPanelViewModel.GitPath))
+        {
+            ofd.FileName = _settingsPanelViewModel.GitPath;
+        }
+
+        if (ofd.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(ofd.FileName))
         {
             _settingsPanelViewModel.GitPath = ofd.FileName;
+            _settingsPanelViewModel.CommitChanges();
         }
+    }
+
+    private async void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        await _settingsPanelViewModel.FlushPendingChangesAsync();
+    }
+
+    private void ShowSaveError(Exception exception)
+    {
+        _context.API.ShowMsgError(
+            _context.API.GetTranslation(Translations.Error),
+            exception.Message);
     }
 }

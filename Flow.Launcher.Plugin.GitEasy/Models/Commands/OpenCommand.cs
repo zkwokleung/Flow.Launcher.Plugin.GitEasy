@@ -1,75 +1,76 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
-using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
+﻿using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
-using FuzzySharp;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
-public class OpenCommand : ICommand
+public class OpenCommand : RepositoryCommandBase
 {
-    public string Key => "Open";
-    public string Title => _context.API.GetTranslation(Translations.QueryResultOpen);
-    public string Description => _context.API.GetTranslation(Translations.QueryResultOpenDesc);
-    public string IconPath => Icons.Logo;
+    public override string Key => "Open";
+    public override string Title => Context.API.GetTranslation(Translations.QueryResultOpen);
+    public override string Description => Context.API.GetTranslation(Translations.QueryResultOpenDesc);
+    public override string IconPath => Icons.Logo;
 
-    private readonly PluginInitContext _context;
     private readonly ISettingsService _settingsService;
-    private readonly IDirectoryService _directoryService;
     private readonly ISystemCommandService _systemCommandService;
 
     public OpenCommand(
         PluginInitContext context,
         ISettingsService settingsService,
         IDirectoryService directoryService,
-        ISystemCommandService systemCommandService
-        )
+        ISystemCommandService systemCommandService)
+        : base(context, directoryService)
     {
-        _context = context;
         _settingsService = settingsService;
-        _directoryService = directoryService;
         _systemCommandService = systemCommandService;
     }
 
-    public List<Result> Resolve(string query, string actionKeyword)
+    protected override string ResultMessageTranslationKey => Translations.QueryResultOpenMsg;
+
+    protected override Func<string, string, Task> CreateRepositoryAction()
     {
-        // Get a list of all directories across all configured repository roots
-        List<string> dirs = _directoryService.GetRepositoriesDirectories();
+        OpenOption openOption = _settingsService.GetSettings().OpenReposIn;
+        return (repositoryPath, _) => OpenRepositoryAsync(repositoryPath, openOption);
+    }
 
-        return dirs.Select(d =>
+    private async Task OpenRepositoryAsync(string repositoryPath, OpenOption openOption)
+    {
+        try
         {
-            string repoName = DirectoryUtils.ExtractRepositoryNameFromDirectory(d);
-            int score = Fuzz.Ratio(d, query);
-            return new Result
+            switch (openOption)
             {
-                Title = repoName,
-                SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultOpenMsg), repoName),
-                IcoPath = IconPath,
-                Score = score,
-                AutoCompleteText = !string.IsNullOrEmpty(actionKeyword) ? $"{actionKeyword} {Key} {repoName}" : $"{Key} {repoName}",
-                Action = _ =>
-                {
-                    switch (_settingsService.GetSettingsOrDefault().OpenReposIn)
-                    {
-                        case OpenOption.VSCode:
-                            _systemCommandService.OpenVsCode(d);
-                            break;
+                case OpenOption.VSCode:
+                    await _systemCommandService.OpenVsCodeAsync(repositoryPath);
+                    break;
 
-                        case OpenOption.Cursor:
-                            _systemCommandService.OpenCursor(d);
-                            break;
+                case OpenOption.Cursor:
+                    await _systemCommandService.OpenCursorAsync(repositoryPath);
+                    break;
 
-                        case OpenOption.FileExplorer:
-                        case OpenOption.None:
-                        default:
-                            _systemCommandService.OpenExplorer(d);
-                            break;
-                    }
-                    return true;
-                }
-            };
-        }).ToList();
+                case OpenOption.FileExplorer:
+                case OpenOption.None:
+                default:
+                    await _systemCommandService.OpenExplorerAsync(repositoryPath);
+                    break;
+            }
+        }
+        catch (Exception exception)
+        {
+            ShowOpenRepositoryError(repositoryPath, exception);
+        }
+    }
+
+    private void ShowOpenRepositoryError(string repositoryPath, Exception exception)
+    {
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                Context.API.GetTranslation(Translations.ErrorOpenRepository),
+                repositoryPath),
+            exception.Message);
+
+        Context.API.ShowMsgError(
+            Context.API.GetTranslation(Translations.Error),
+            message);
     }
 }

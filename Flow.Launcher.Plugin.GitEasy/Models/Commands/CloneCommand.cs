@@ -1,9 +1,12 @@
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
@@ -16,182 +19,287 @@ public class CloneCommand : ICommand
     private PluginInitContext _context;
     private IGitCommandService _gitCommandService;
     private ISettingsService _settingsService;
+    private readonly IDirectoryService _directoryService;
     private ISystemCommandService _systemCommandService;
 
     public CloneCommand(
         PluginInitContext context,
         ISettingsService settingsService,
+        IDirectoryService directoryService,
         IGitCommandService gitCommandService,
-        ISystemCommandService systemCommandService
-        )
+        ISystemCommandService systemCommandService)
     {
         _context = context;
         _settingsService = settingsService;
+        _directoryService = directoryService;
         _gitCommandService = gitCommandService;
         _systemCommandService = systemCommandService;
     }
 
-    public List<Result> Resolve(string query, string actionKeyword)
+    public async Task<List<Result>> ResolveAsync(
+        string query,
+        string actionKeyword,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(query))
+        cancellationToken.ThrowIfCancellationRequested();
+
+        CloneQueryResult parsedQuery = CloneQueryParser.Parse(query);
+
+        switch (parsedQuery.Status)
         {
-            // Display a hint result
-            return new()
-            {
-                new Result
+            case CloneQueryStatus.Hint:
+                // Display a hint result
+                return CompleteResolution(new()
                 {
-                    Title = _context.API.GetTranslation(Translations.QueryResultCloneHint),
-                    IcoPath = Icons.Logo,
-                    Action = _ => true,
-                }
-            };
+                    new Result
+                    {
+                        Title = _context.API.GetTranslation(Translations.QueryResultCloneHint),
+                        IcoPath = Icons.Logo,
+                        Action = _ => true,
+                    }
+                }, cancellationToken);
+
+            case CloneQueryStatus.NoRepository:
+                return CompleteResolution(new()
+                {
+                    new Result
+                    {
+                        Title = _context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
+                        IcoPath = Icons.Logo,
+                        Action = _ => true
+                    }
+                }, cancellationToken);
+
+            case CloneQueryStatus.Invalid:
+                return CompleteResolution(GetInvalidCloneResults(), cancellationToken);
+
+            case CloneQueryStatus.Valid:
+                break;
+
+            default:
+                throw new InvalidOperationException("Unknown clone query status.");
         }
 
-        List<string> terms = query.Split(' ').ToList();
+        string repository = parsedQuery.Repository;
+        string location = parsedQuery.RepositoryName;
+        IReadOnlyList<string> cloneArguments = parsedQuery.Arguments;
 
-        // Use regex to indentify the repo for the flexibility
-        List<string> repos = terms.Where(t => RegexUtils.ReposRegex().IsMatch(t)).ToList();
-
-        if (repos.Count < 1)
-        {
-            return new()
-            {
-                new Result{
-                    Title= _context.API.GetTranslation(Translations.QueryResultCloneNoRepos),
-                    IcoPath = Icons.Logo,
-                    Action = _ => true,
-                }
-            };
-        }
-
-        string firstRepos = repos.First();
-        string options = string.Join(" ", terms.Remove(firstRepos));
-
-        // Extract the repos folder name from the repos url
-        string location = ExtractRepoName(firstRepos);
-
+        var settings = _settingsService.GetSettings();
+        OpenOption defaultPostAction = settings.OpenReposIn;
         // Determine repository root paths
-        List<string> repoRoots = _settingsService.GetSettingsOrDefault().ReposPaths;
-        if (repoRoots == null || repoRoots.Count == 0)
-        {
-            repoRoots = new() { _settingsService.GetSettingsOrDefault().ReposPath };
-        }
+        IReadOnlyList<string> repoRoots = await _directoryService
+            .GetExistingRepositoryRootsAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
 
         List<Result> results = new();
 
         foreach (string root in repoRoots)
         {
-            if (string.IsNullOrWhiteSpace(root))
-            {
-                continue;
-            }
-
-            string destinationPath = $"{root}\\{location}";
-
+            cancellationToken.ThrowIfCancellationRequested();
+            string destinationPath = Path.Combine(root, location);
             // Default clone (follow OpenReposIn setting)
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultClone)} {location} → {root}",
-                SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultCloneMsg), firstRepos, root),
+                SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultCloneMsg), repository, root),
                 IcoPath = Icons.Logo,
-                Action = _ =>
-                {
-                    ExecuteClone(firstRepos, options, root, location, _settingsService.GetSettingsOrDefault().OpenReposIn);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    defaultPostAction)
             });
-
             // Clone and open Explorer
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenExplorer)} ({root})",
                 IcoPath = Icons.Explorer,
-                Action = _ =>
-                {
-                    ExecuteClone(firstRepos, options, root, location, OpenOption.FileExplorer);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    OpenOption.FileExplorer)
             });
-
             // Clone and open VSCode
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenVSCode)} ({root})",
                 IcoPath = Icons.VSCode,
-                Action = _ =>
-                {
-                    ExecuteClone(firstRepos, options, root, location, OpenOption.VSCode);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    OpenOption.VSCode)
             });
-
             // Clone and open in Cursor
             results.Add(new Result
             {
                 Title = $"{_context.API.GetTranslation(Translations.QueryResultCloneOpenCursor)} ({root})",
                 IcoPath = Icons.Cursor,
-                Action = _ =>
-                {
-                    ExecuteClone(firstRepos, options, root, location, OpenOption.Cursor);
-                    return true;
-                }
+                Action = _ => StartCloneInBackground(
+                    repository,
+                    cloneArguments,
+                    destinationPath,
+                    location,
+                    OpenOption.Cursor)
             });
         }
 
-        return results;
-    }
-
-    private void ExecuteClone(string repoUrl, string options, string rootPath, string location, OpenOption postAction)
-    {
-        try
-        {
-            _gitCommandService.CloneRepos(new()
-            {
-                Options = options,
-                DestinationFolder = rootPath,
-                Repo = repoUrl
-            }, () =>
-            {
-                ShowCloneCompleteMsg(location);
-
-                switch (postAction)
-                {
-                    case OpenOption.FileExplorer:
-                        _systemCommandService.OpenExplorer($"{rootPath}\\{location}");
-                        break;
-                    case OpenOption.VSCode:
-                        _systemCommandService.OpenVsCode($"{rootPath}\\{location}");
-                        break;
-                    case OpenOption.Cursor:
-                        _systemCommandService.OpenCursor($"{rootPath}\\{location}");
-                        break;
-                    default:
-                        break;
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            _context.API.ShowMsgError("Error", ex.Message);
-        }
+        return CompleteResolution(results, cancellationToken);
     }
 
     #region Private Functions
+    private static List<Result> CompleteResolution(
+        List<Result> results,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return results;
+    }
+
+    private bool StartCloneInBackground(
+        string repositoryUrl,
+        IReadOnlyList<string> arguments,
+        string destinationPath,
+        string location,
+        OpenOption postAction)
+    {
+        _context.API.ShowMsg(
+            _context.API.GetTranslation(Translations.QueryCloneStarted),
+            string.Format(
+                _context.API.GetTranslation(Translations.QueryCloneStartedMsg),
+                location,
+                destinationPath),
+            iconPath: Icons.Logo);
+
+        _ = ExecuteCloneAsync(repositoryUrl, arguments, destinationPath, location, postAction);
+        return true;
+    }
+
+    private async Task ExecuteCloneAsync(
+        string repositoryUrl,
+        IReadOnlyList<string> arguments,
+        string destinationPath,
+        string location,
+        OpenOption postAction)
+    {
+        try
+        {
+            GitCommandResult result = await _gitCommandService.CloneRepositoryAsync(
+                new()
+                {
+                    Arguments = arguments,
+                    DestinationPath = destinationPath,
+                    Repo = repositoryUrl
+                },
+                CancellationToken.None);
+
+            if (!result.Succeeded)
+            {
+                ShowCloneError(location, result);
+                return;
+            }
+
+            ShowCloneCompleteMsg(location);
+            await OpenRepositoryAsync(destinationPath, postAction);
+        }
+        catch (TimeoutException)
+        {
+            _context.API.ShowMsgError(
+                _context.API.GetTranslation(Translations.Error),
+                string.Format(
+                    _context.API.GetTranslation(Translations.ErrorCloneTimeout),
+                    destinationPath));
+        }
+        catch (Exception ex)
+        {
+            ShowCloneError(location, ex.Message);
+        }
+    }
+
     private void ShowCloneCompleteMsg(string location)
     {
         _context.API.ShowMsg(
             _context.API.GetTranslation(Translations.QueryCloneComplete),
-            $"{_context.API.GetTranslation(Translations.QueryClonseCompleteMsg)} {location}"
-            );
+            string.Format(
+                _context.API.GetTranslation(Translations.QueryClonseCompleteMsg),
+                location),
+            iconPath: Icons.Logo);
     }
 
-    private string ExtractRepoName(string url)
+    private void ShowCloneError(string location, GitCommandResult result)
     {
-        if (url.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-            url = url.Substring(0, url.Length - 4);
+        string details = CommandErrorFormatter.GetGitFailureDetails(
+            result,
+            _context.API.GetTranslation(Translations.ErrorGitExitCode));
 
-        // Look for the last index of the last slash /
-        return url.Substring(url.LastIndexOf('/') + 1);
+        ShowCloneError(location, details);
+    }
+
+    private void ShowCloneError(string location, string details)
+    {
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                _context.API.GetTranslation(Translations.ErrorCloneMsg),
+                location),
+            details);
+
+        _context.API.ShowMsgError(
+            _context.API.GetTranslation(Translations.Error),
+            message);
+    }
+
+    private async Task OpenRepositoryAsync(string destinationPath, OpenOption postAction)
+    {
+        try
+        {
+            switch (postAction)
+            {
+                case OpenOption.FileExplorer:
+                    await _systemCommandService.OpenExplorerAsync(destinationPath);
+                    break;
+                case OpenOption.VSCode:
+                    await _systemCommandService.OpenVsCodeAsync(destinationPath);
+                    break;
+                case OpenOption.Cursor:
+                    await _systemCommandService.OpenCursorAsync(destinationPath);
+                    break;
+            }
+        }
+        catch (Exception exception)
+        {
+            ShowOpenRepositoryError(destinationPath, exception);
+        }
+    }
+
+    private void ShowOpenRepositoryError(string destinationPath, Exception exception)
+    {
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                _context.API.GetTranslation(Translations.ErrorOpenRepository),
+                destinationPath),
+            exception.Message);
+
+        _context.API.ShowMsgError(
+            _context.API.GetTranslation(Translations.Error),
+            message);
+    }
+
+    private List<Result> GetInvalidCloneResults()
+    {
+        return new()
+        {
+            new Result
+            {
+                Title = _context.API.GetTranslation(Translations.ErrorInvalidCmd),
+                SubTitle = _context.API.GetTranslation(Translations.ErrorInvalidCmdMsg),
+                IcoPath = Icons.Error,
+                Action = _ => true
+            }
+        };
     }
     #endregion
 }

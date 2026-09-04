@@ -12,10 +12,10 @@ public static class DependencyInjection
     {
         services.AddSingleton(context);
         services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton<ICommandService, CommandService>();
         services.AddSingleton<ISystemCommandService, SystemCommandService>();
         services.AddSingleton<IGitCommandService, GitCommandService>();
-        services.AddSingleton<IGitHubService, GitHubService>();
         services.AddSingleton<IDirectoryService, DirectoryService>();
 
         return services;

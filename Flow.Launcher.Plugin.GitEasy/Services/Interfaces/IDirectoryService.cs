@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 
 public interface IDirectoryService
 {
-    List<string> GetDirectories(string path);
-    bool VerifyRepositoriesPath();
+    Task<IReadOnlyList<string>> GetExistingRepositoryRootsAsync(CancellationToken cancellationToken);
     void CreateDirectory(string path);
-    void CreateRepositoriesDirectory();
-    List<string> GetRepositoriesDirectories();
+    Task<IReadOnlyList<string>> GetRepositoriesDirectoriesAsync(CancellationToken cancellationToken);
 }

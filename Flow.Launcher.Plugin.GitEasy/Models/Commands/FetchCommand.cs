@@ -1,83 +1,99 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
-using Flow.Launcher.Plugin.GitEasy.Models.Commands.Options;
+﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands.Results;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Utilities;
-using FuzzySharp;
-using System.Collections.Generic;
-using System.Linq;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Flow.Launcher.Plugin.GitEasy.Models.Commands;
 
-public class FetchCommand : ICommand
+public class FetchCommand : RepositoryCommandBase
 {
-    public string Key => "Fetch";
-    public string Title => _context.API.GetTranslation(Translations.QueryResultFetch);
-    public string Description => _context.API.GetTranslation(Translations.QueryResultFetchDesc);
-    public string IconPath => Icons.Logo;
+    public override string Key => "Fetch";
+    public override string Title => Context.API.GetTranslation(Translations.QueryResultFetch);
+    public override string Description => Context.API.GetTranslation(Translations.QueryResultFetchDesc);
+    public override string IconPath => Icons.Logo;
 
-    private readonly PluginInitContext _context;
-    private readonly ISettingsService _settingsService;
     private readonly IGitCommandService _gitCommandService;
-    private readonly IDirectoryService _directoryService;
 
     public FetchCommand(
         PluginInitContext context,
-        ISettingsService settingsService,
         IGitCommandService gitCommandService,
         IDirectoryService directoryService)
+        : base(context, directoryService)
     {
-        _context = context;
-        _settingsService = settingsService;
         _gitCommandService = gitCommandService;
-        _directoryService = directoryService;
     }
 
-    public List<Result> Resolve(string query, string actionKeyword)
+    protected override string ResultMessageTranslationKey => Translations.QueryResultFetchMsg;
+
+    protected override Func<string, string, Task> CreateRepositoryAction()
     {
-        // Get a list of all directories across all configured repository roots
-        List<string> dirs = _directoryService.GetRepositoriesDirectories();
+        return StartFetchInBackground;
+    }
 
-        return dirs.Select(d =>
+    private Task StartFetchInBackground(string repositoryPath, string repositoryName)
+    {
+        Context.API.ShowMsg(
+            Context.API.GetTranslation(Translations.QueryFetchStarted),
+            string.Format(
+                Context.API.GetTranslation(Translations.QueryFetchStartedMsg),
+                repositoryName),
+            iconPath: IconPath);
+
+        _ = ExecuteFetchAsync(repositoryPath, repositoryName);
+        return Task.CompletedTask;
+    }
+
+    private async Task ExecuteFetchAsync(string repositoryPath, string repositoryName)
+    {
+        try
         {
-            string repoName = DirectoryUtils.ExtractRepositoryNameFromDirectory(d);
-            int score = Fuzz.Ratio(d, query);
-            return new Result
-            {
-                Title = repoName,
-                SubTitle = string.Format(_context.API.GetTranslation(Translations.QueryResultOpenMsg), repoName),
-                IcoPath = IconPath,
-                Score = score,
-                AutoCompleteText = $"{actionKeyword} {Key} {repoName}",
-                Action = _ =>
-                {
-                    _gitCommandService.FetchRepos(
-                        new GitFetchCommandOptions()
-                        {
-                            RepoPath = d
-                        },
-                        e =>
-                        {
-                            if (e.ExitCode == 0)
-                            {
-                                _context.API.ShowMsg(
-                                    _context.API.GetTranslation(Translations.QueryFetchComplete),
-                                    string.Format(_context.API.GetTranslation(Translations.QueryFetchCompleteMsg), repoName),
-                                    iconPath: IconPath
-                                );
-                            }
-                            else
-                            {
-                                _context.API.ShowMsgError(
-                                    _context.API.GetTranslation(Translations.Error),
-                                    string.Format(_context.API.GetTranslation(Translations.ErrorFetchMsg), repoName)
-                                );
-                            }
-                        }
-                    );
+            GitCommandResult result = await _gitCommandService.FetchRepositoryAsync(
+                repositoryPath,
+                CancellationToken.None);
 
-                    return true;
-                }
-            };
-        }).ToList();
+            if (!result.Succeeded)
+            {
+                ShowFetchError(
+                    repositoryName,
+                    CommandErrorFormatter.GetGitFailureDetails(
+                        result,
+                        Context.API.GetTranslation(Translations.ErrorGitExitCode)));
+                return;
+            }
+
+            Context.API.ShowMsg(
+                Context.API.GetTranslation(Translations.QueryFetchComplete),
+                string.Format(
+                    Context.API.GetTranslation(Translations.QueryFetchCompleteMsg),
+                    repositoryName),
+                iconPath: IconPath);
+        }
+        catch (TimeoutException)
+        {
+            Context.API.ShowMsgError(
+                Context.API.GetTranslation(Translations.Error),
+                string.Format(
+                    Context.API.GetTranslation(Translations.ErrorFetchTimeout),
+                    repositoryName));
+        }
+        catch (Exception exception)
+        {
+            ShowFetchError(repositoryName, exception.Message);
+        }
+    }
+
+    private void ShowFetchError(string repositoryName, string details)
+    {
+        string message = CommandErrorFormatter.FormatWithDetails(
+            string.Format(
+                Context.API.GetTranslation(Translations.ErrorFetchMsg),
+                repositoryName),
+            details);
+
+        Context.API.ShowMsgError(
+            Context.API.GetTranslation(Translations.Error),
+            message);
     }
 }

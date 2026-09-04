@@ -4,7 +4,6 @@ namespace Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
 
 public interface ISettingsService
 {
-    Settings GetSettingsOrDefault();
     Settings GetSettings();
-    Settings GetDefault();
+    void SaveSettings();
 }

@@ -1,7 +1,7 @@
 name: build
 
 permissions:
-  contents: write
+  contents: read
 
 on:
   workflow_dispatch:
@@ -16,12 +16,12 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 7.0.x
+          dotnet-version: 9.0.x
 
       - name: Restore dependencies
         run: |
@@ -32,9 +32,9 @@ jobs:
         run: |
           cd Flow.Launcher.Plugin.GitEasy
           dotnet publish -c Release -r win-x64 --no-self-contained Flow.Launcher.Plugin.GitEasy.csproj
-      
+
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Flow.Launcher.Plugin.GitEasy
           path: ./Flow.Launcher.Plugin.GitEasy/bin/Release/Plugins/Flow.Launcher.Plugin.GitEasy/win-x64/publish

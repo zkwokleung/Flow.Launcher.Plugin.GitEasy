@@ -25,23 +25,19 @@ public static class Translations
     public const string QueryResultFetchMsg = "giteasy_query_result_fetch_msg";
 
     // Message
+    public const string QueryCloneStarted = "giteasy_query_clone_started";
+    public const string QueryCloneStartedMsg = "giteasy_query_clone_started_msg";
     public const string QueryCloneComplete = "giteasy_query_clone_complete";
     public const string QueryClonseCompleteMsg = "giteasy_query_clone_complete_msg";
 
+    public const string QueryFetchStarted = "giteasy_query_fetch_started";
+    public const string QueryFetchStartedMsg = "giteasy_query_fetch_started_msg";
     public const string QueryFetchComplete = "giteasy_query_fetch_complete";
     public const string QueryFetchCompleteMsg = "giteasy_query_fetch_complete_msg";
 
     public const string QueryOpenSettings = "giteasy_query_open_settings";
     public const string QueryCreateFolder = "giteasy_query_create_folder";
     public const string MsgFolderCreated = "giteasy_msg_folder_created";
-
-    // Program setting
-    public const string SrttingsReposPath = "giteasy_settings_repositories_path";
-    public const string SettingsReposPathDesc = "giteasy_settings_repositories_path_description";
-    public const string SettingsGitPath = "giteasy_settings_git_path";
-    public const string SettingsGitPathDesc = "giteasy_settings_git_path_description";
-    public const string SettingsBrowse = "giteasy_settings_browse";
-    public const string SettingsOpenReposIn = "giteasy_settings_open_repos_in";
 
     // Errors
     public const string Error = "giteasy_error";
@@ -50,5 +46,10 @@ public static class Translations
     public const string ErrorInvalidCmd = "giteasy_error_invalid_cmd";
     public const string ErrorInvalidCmdMsg = "giteasy_error_invalid_cmd_msg";
     public const string ErrorInvalidReposPath = "giteasy_error_invalid_repos_path";
+    public const string ErrorCloneMsg = "giteasy_error_clone_msg";
     public const string ErrorFetchMsg = "giteasy_error_fetch_msg";
+    public const string ErrorCloneTimeout = "giteasy_error_clone_timeout";
+    public const string ErrorFetchTimeout = "giteasy_error_fetch_timeout";
+    public const string ErrorGitExitCode = "giteasy_error_git_exit_code";
+    public const string ErrorOpenRepository = "giteasy_error_open_repository";
 }
