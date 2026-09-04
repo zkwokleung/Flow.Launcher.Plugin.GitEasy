@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin.GitEasy.Models.Commands;
+using Flow.Launcher.Plugin.GitEasy.Models.Commands;
 using Flow.Launcher.Plugin.GitEasy.Models.Commands.Interfaces;
 using Flow.Launcher.Plugin.GitEasy.Services;
 using Flow.Launcher.Plugin.GitEasy.Services.Interfaces;
