@@ -55,9 +55,9 @@ public class SystemCommandService : ISystemCommandService
         string directoryPath = GetExistingDirectoryPath(path);
         ProcessStartInfo info = TryGetWslPathParts(
             directoryPath,
-            out string distro,
+            out string distribution,
             out string linuxPath)
-            ? CreateWslEditorStartInfo(editorCommand, distro, linuxPath)
+            ? CreateWslEditorStartInfo(editorCommand, distribution, linuxPath)
             : CreateWindowsEditorStartInfo(editorCommand, directoryPath);
 
         _processRunner.StartDetached(info);
@@ -65,7 +65,7 @@ public class SystemCommandService : ISystemCommandService
 
     private static ProcessStartInfo CreateWslEditorStartInfo(
         string editorCommand,
-        string distro,
+        string distribution,
         string linuxPath)
     {
         ProcessStartInfo info = new()
@@ -76,7 +76,7 @@ public class SystemCommandService : ISystemCommandService
             WindowStyle = ProcessWindowStyle.Hidden,
         };
         info.ArgumentList.Add("--distribution");
-        info.ArgumentList.Add(distro);
+        info.ArgumentList.Add(distribution);
         info.ArgumentList.Add("--");
         info.ArgumentList.Add(editorCommand);
         info.ArgumentList.Add(linuxPath);
@@ -235,7 +235,7 @@ public class SystemCommandService : ISystemCommandService
 
     private static bool TryGetWslPathParts(
         string path,
-        out string distro,
+        out string distribution,
         out string linuxPath)
     {
         string prefix;
@@ -249,7 +249,7 @@ public class SystemCommandService : ISystemCommandService
         }
         else
         {
-            distro = string.Empty;
+            distribution = string.Empty;
             linuxPath = string.Empty;
             return false;
         }
@@ -262,7 +262,7 @@ public class SystemCommandService : ISystemCommandService
             throw new ArgumentException("A WSL path must include a distribution name.", nameof(path));
         }
 
-        distro = parts[0];
+        distribution = parts[0];
         linuxPath = parts.Length == 1
             ? "/"
             : "/" + string.Join('/', parts, 1, parts.Length - 1);
